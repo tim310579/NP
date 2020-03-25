@@ -11,6 +11,14 @@
 #define SERVER_PORT 11332  
 #define BUFFER_SIZE 1024  
 #define QUIT_CMD ".quit"  
+#define ERR1 "Usage: register <username> <email> <password>\n"
+#define ERR2 "Username or Email is already used\n"
+#define ERR3 "Usage: login <username> <password>\n"
+#define ERR4 "Login failed.\n"
+
+#define SUC1 "Register successfully.\n"
+#define SUC2 "Welcome, "
+
 typedef struct Data Data;
 struct Data{
 	int regis, login;
@@ -185,11 +193,11 @@ int main(int argc, const char * argv[])
                             //{ 
 			    if(!strncmp(recv_msg, "show", 4)){
 				for(int k = 0; k < acc_num; k++){
-					printf("%d  %s  %s  %s\n", database[k].regis, database[k].name, database[k].email, database[k].password);
+					printf("%d  %d  %s  %s  %s\n", database[k].regis, database[k].login, database[k].name, database[k].email, database[k].password);
 				}
 			    }
 			    if(!strncmp(recv_msg, "register", 8)){
-				printf("begin %s\n", recv_msg);
+				//printf("begin %s\n", recv_msg);
 				char *delim = " ";
 				char *pch;
 				pch = strtok(recv_msg, delim);
@@ -219,16 +227,15 @@ int main(int argc, const char * argv[])
 					pch = strtok(NULL, delim);
 					//tmp++;
 				}
-				    printf("%d num\n", tmp);
+				    //printf("%d num\n", tmp);
 				    int reg_yn = 1;
-				    char error1[200] = "Usage: register <username> <email> <password>\n";
 				    if(tmp != 4) {
-					    send(client_fds[i], error1, sizeof(error1), 0);
+					    send(client_fds[i], ERR1, sizeof(ERR1), 0);
 				            reg_yn = 0;
-				    }char error2[200] = "Username or Email is already used\n";
+				    }
 				    for(int j = 0; j < acc_num; j++){
 					if(!strcmp(tmp1, database[j].name) || !strcmp(tmp2, database[j].email)){
-						send(client_fds[i], error2, sizeof(error2), 0);
+						send(client_fds[i], ERR2, sizeof(ERR2), 0);
 						reg_yn = 0;
 					}
 				    }
@@ -237,10 +244,58 @@ int main(int argc, const char * argv[])
 					strcpy(database[acc_num].name, tmp1);
 					strcpy(database[acc_num].email, tmp2);
 					strcpy(database[acc_num].password, tmp3);
+					send(client_fds[i], SUC1, sizeof(SUC1), 0);
 					acc_num ++;
 				    }
 				    
-			    } 
+			    }
+			    else if(!strncmp(recv_msg, "login", 5)){
+				char *delim = " ";
+				char *pch;
+				pch = strtok(recv_msg, delim);
+				int tmp = 0;
+				char tmp0[100]="", tmp1[100]="", tmp2[100]="";
+
+				while(pch != NULL){
+					if(tmp >= 3) break;
+					switch(tmp){
+						case 0:
+							strcpy(tmp0, pch);
+						case 1:
+							strcpy(tmp1, pch);
+						case 2:
+							strcpy(tmp2, pch);
+					}	
+					tmp++;
+					pch = strtok(NULL, delim);
+				}
+				int log_yn = 1;
+				if(tmp != 3){
+					send(client_fds[i], ERR3, sizeof(ERR3), 0);
+				        log_yn = 0;
+				}
+				else{
+					int find = 0;
+					for(int j = 0; j < acc_num; j++){
+						if(!strcmp(tmp1, database[j].name)){
+							find = 1;
+							if(!strcmp(tmp2, database[j].password)){
+								char suc[100] = "Welcome, ";
+								strcat(suc, tmp1);
+								strcat(suc, ".\n");
+								send(client_fds[i], suc, sizeof(suc), 0);
+								database[j].login = 1;
+								//right password
+							}
+							else{
+								log_yn = 0;
+								send(client_fds[i], ERR4, sizeof(ERR4), 0);
+							}
+						}
+					}
+				}
+
+			    }
                                 if(client_fds[i] != 0)  
                                 {   
                                     //send(client_fds[i], recv_msg, sizeof(recv_msg), 0);  
