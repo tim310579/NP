@@ -95,7 +95,7 @@ int main(int argc, const char * argv[])
             exit(1);
         }
         printf("New connection.\n");
-	pthread_create(&t[c_num], NULL, conn, &clientfd);
+	pthread_create(&t[c_num], NULL, conn, (void *)clientfd);
 	c_num ++;
 	
 		
@@ -120,11 +120,9 @@ int main(int argc, const char * argv[])
     }
 }
 void* conn(void *arg){
-	int fd = *(int*)arg;
-
 	int login_yn = 0, login_num = 0;
 	char login_name[100];
-	//int fd = (int) arg;
+	int fd = (int) arg;
 	//printf("%d num\n", fd);
 	char recv_msg[BUFFER_SIZE];
 	//bzero(recv_msg, BUFFER_SIZE);
