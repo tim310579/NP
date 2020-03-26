@@ -5,11 +5,18 @@
 ` gcc -o server server.c -lpthread`
 
 
-` ./server 1234   
+` ./server 1234`
 
-1234 can be any number
+(1234 can be any number)
 
 ### client端
 
 ` telnet 127.0.0.1 1234`
 
+#### example
+
+`register a aaa 111`
+
+`register b bbb 222`
+
+` adddata`    (can add many data)
