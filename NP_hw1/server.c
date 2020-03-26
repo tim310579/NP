@@ -90,15 +90,62 @@ int main(int argc, const char * argv[])
 
     while(1){
 	       
-	       //bzero(input_msg, BUFFER_SIZE);
-	       
-	       //fgets(input_msg, BUFFER_SIZE, stdin); 
-	       //if(strcmp(input_msg, "quit\n") == 0)  { 
-		 //      printf("8787");	
-                   // exit(0);  
-               //} 
-        if((clientfd=accept(socketfd,(struct sockaddr*)NULL,NULL))<0)	//accept(), wait for client
+	/*fd_set server_fd_set;
+   	int max_fd = -1;
+   	struct timeval tv;
+    	tv.tv_sec = 20;
+        tv.tv_usec = 0;
+        FD_ZERO(&server_fd_set);
+        FD_SET(STDIN_FILENO, &server_fd_set);
+        if(max_fd <STDIN_FILENO)
         {
+            max_fd = STDIN_FILENO;
+        }
+       
+        FD_SET(socketfd, &server_fd_set);
+        if(max_fd < socketfd)
+        {
+            max_fd = socketfd;
+        }
+      	int ret = select(max_fd + 1, &server_fd_set, NULL, NULL, &tv);
+        if(ret < 0)
+        {
+            //perror("select 出错\n");
+            continue;
+        }
+        else if(ret == 0)
+        {
+            //printf("select ..\n");
+            continue;
+        }
+	else{
+            if(FD_ISSET(STDIN_FILENO, &server_fd_set))  
+            {  
+               
+                bzero(input_msg, BUFFER_SIZE);  
+                fgets(input_msg, BUFFER_SIZE, stdin);  
+                
+		
+                if(!strncmp(input_msg, "quit", 4))  
+                { 
+		    	close(socketfd);
+                    	exit(0);  
+                }  
+		else if(!strncmp(input_msg, "ls", 2) || !strncmp(input_msg, "show", 4)){
+			printf("------------------------------------------------------------\n");
+                        for(int k = 0; k < acc_num; k++){
+                                printf("%d  %d  %s  %s  %s||\n", database[k].regis, database[k].login, database[k].name, database[k].email, database[k].password);
+                        }
+			printf("------------------------------------------------------------\n");
+		}
+	    }
+	}	    
+	*/
+        
+
+	    if((clientfd=accept(socketfd,(struct sockaddr*)NULL,NULL)) < 0)	//accept(), wait for client
+        {
+		printf("herre\n");
 		//recv(clientfd, recv_msg, BUFFER_SIZE, 0);
 		//send(clientfd, recv_msg, sizeof(recv_msg), 0);
             perror("accept");
@@ -107,6 +154,7 @@ int main(int argc, const char * argv[])
         printf("New connection.\n");
 	pthread_create(&t[c_num], NULL, conn, &clientfd);
 	c_num ++;
+	
 	//printf("%d listen\n", listen(socketfd,MAX_QUE));
 		
 		
@@ -145,6 +193,7 @@ void* conn(void *arg){
                 //printf("%d\n\n", clientfd);
                 bzero(recv_msg, BUFFER_SIZE);
                 long tmp = recv(fd, recv_msg, BUFFER_SIZE, 0);
+		
                 if(!strncmp(recv_msg, "ls", 2)){
                         printf("------------------------------------------------------------\n");
                         for(int k = 0; k < acc_num; k++){
@@ -152,7 +201,7 @@ void* conn(void *arg){
                         }
 			printf("------------------------------------------------------------\n");
                 }
-		else if(!strncmp(recv_msg, "register", 8)){
+		if(!strncmp(recv_msg, "register", 8)){
 			//printf("begin %s\n", recv_msg);
 			char *delim = " ";
 			char *pch;
