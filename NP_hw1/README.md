@@ -3,7 +3,7 @@
 ## server端
 
 
-` gcc -o server server.c -lpthread
+`    gcc -o server server.c -lpthread
 
 
 ` ./server 1234   //can be any number
