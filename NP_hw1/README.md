@@ -5,7 +5,9 @@
 ` gcc -o server server.c -lpthread`
 
 
-` ./server 1234   //can be any number`
+` ./server 1234   
+
+1234 can be any number
 
 ### client端
 
