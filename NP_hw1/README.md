@@ -15,7 +15,7 @@
 
 #### example:
 
-`ls` 
+`ls`    
 (see all database)
 
 `register a aaa 111`
