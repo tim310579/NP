@@ -9,8 +9,9 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
-#define PORT 1234
-#define MAX_QUE 5
+
+#define STDIN 0
+#define MAX_QUE 20
 #define BUFFER_SIZE 1024
 #define ERR1 "Usage: register <username> <email> <password>\n"
 #define ERR2 "Username or Email is already used\n"
@@ -55,11 +56,12 @@ int main(int argc, const char * argv[])
 	}
 
 	char recv_msg[BUFFER_SIZE];  
-    	struct sockaddr_in local_sockaddr;
-    	int socketfd;//本地socket套接字描述符
-    	int clientfd;//客户端链接描述符
+ 	char input_msg[BUFFER_SIZE];   
+	struct sockaddr_in local_sockaddr;
+    	int socketfd;	//socket
+    	int clientfd;	//client
     	pid_t pid;
-    if((socketfd=socket(AF_INET,SOCK_STREAM,0))<0)//建立socket连接
+    if((socketfd=socket(AF_INET,SOCK_STREAM,0))<0)//build socket link
     {
         perror("socket");
         exit(1);
@@ -68,26 +70,34 @@ int main(int argc, const char * argv[])
     local_sockaddr.sin_family = AF_INET;
     local_sockaddr.sin_port    = htons(atoi(argv[1]));
     local_sockaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    //printf("server ip =%s\n",inet_ntoa(local_sockaddr.sin_addr));//输出服务器ip地址
+    //printf("server ip =%s\n",inet_ntoa(local_sockaddr.sin_addr));	//ip
     memset(local_sockaddr.sin_zero,0,8);
     int i;
-    setsockopt(socketfd,SOL_SOCKET,SO_REUSEADDR,&i,sizeof(i));//允许重复使用本地的地址与套接字进行绑定
-    if(bind(socketfd,(struct sockaddr *)&local_sockaddr,sizeof(struct sockaddr))<0)//绑定函数bind()
+    setsockopt(socketfd,SOL_SOCKET,SO_REUSEADDR,&i,sizeof(i));
+    if(bind(socketfd,(struct sockaddr *)&local_sockaddr,sizeof(struct sockaddr))<0)
     {
         perror("bind");
         exit(1);
     }
     //printf("Bind success!\n");
-    if(listen(socketfd,MAX_QUE)<0)//利用listen()设置被动监听
+    if(listen(socketfd,MAX_QUE)<0)	//listen passively
     {
         //perror("listen");
         exit(1);
     }
+    //printf("%d listen\n", listen(socketfd,MAX_QUE));
     int c_num = 0;
-    //printf("Listening>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
-    while(1)
-       {
-        if((clientfd=accept(socketfd,(struct sockaddr*)NULL,NULL))<0)//调用accept()函数,等待客户端的链接
+
+    while(1){
+	       
+	       //bzero(input_msg, BUFFER_SIZE);
+	       
+	       //fgets(input_msg, BUFFER_SIZE, stdin); 
+	       //if(strcmp(input_msg, "quit\n") == 0)  { 
+		 //      printf("8787");	
+                   // exit(0);  
+               //} 
+        if((clientfd=accept(socketfd,(struct sockaddr*)NULL,NULL))<0)	//accept(), wait for client
         {
 		//recv(clientfd, recv_msg, BUFFER_SIZE, 0);
 		//send(clientfd, recv_msg, sizeof(recv_msg), 0);
@@ -97,7 +107,7 @@ int main(int argc, const char * argv[])
         printf("New connection.\n");
 	pthread_create(&t[c_num], NULL, conn, &clientfd);
 	c_num ++;
-	
+	//printf("%d listen\n", listen(socketfd,MAX_QUE));
 		
 		
 			//send(clientfd, recv_msg, sizeof(recv_msg), 0);
@@ -135,11 +145,12 @@ void* conn(void *arg){
                 //printf("%d\n\n", clientfd);
                 bzero(recv_msg, BUFFER_SIZE);
                 long tmp = recv(fd, recv_msg, BUFFER_SIZE, 0);
-                if(!strncmp(recv_msg, "show", 4)){
-                        //printf("%d num\n", acc_num);
+                if(!strncmp(recv_msg, "ls", 2)){
+                        printf("------------------------------------------------------------\n");
                         for(int k = 0; k < acc_num; k++){
                                 printf("%d  %d  %s  %s  %s||\n", database[k].regis, database[k].login, database[k].name, database[k].email, database[k].password);
                         }
+			printf("------------------------------------------------------------\n");
                 }
 		else if(!strncmp(recv_msg, "register", 8)){
 			//printf("begin %s\n", recv_msg);
@@ -303,6 +314,22 @@ void* conn(void *arg){
 		else if(!strncmp(recv_msg, "exit", 4)){
 			close(fd);
 			//exit(0);
+		}
+		else if(!strncmp(recv_msg, "adddata", 7)){
+			
+			for(int h = acc_num; h < acc_num + 10; h++){
+				char temp[10] = "a";
+				database[h].regis = 1;
+				database[h].login = 0;
+				char tmp[10] = "";
+				sprintf(tmp, "%d", h);
+				strcat(temp, tmp);
+				strcpy(database[h].name, temp);
+				strcat(temp, tmp);
+				strcpy(database[h].email, temp);
+				strcpy(database[h].password, tmp);
+			}
+			acc_num += 10;
 		}
 		else{
 			send(fd, ERR7, sizeof(ERR7), 0);
