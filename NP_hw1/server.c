@@ -71,8 +71,8 @@ int main(int argc, const char * argv[])
     //printf("Socket id = %d\n",socketfd);
     local_sockaddr.sin_family = AF_INET;
     local_sockaddr.sin_port    = htons(atoi(argv[1]));
-    local_sockaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
-    //local_sockaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    //local_sockaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+    local_sockaddr.sin_addr.s_addr = htonl(INADDR_ANY);
     //printf("server ip =%s\n",inet_ntoa(local_sockaddr.sin_addr));	//ip
     memset(local_sockaddr.sin_zero,0,8);
     int i = 1;
