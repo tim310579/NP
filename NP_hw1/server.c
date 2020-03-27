@@ -9,6 +9,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <signal.h>
 
 #define STDIN 0
 #define MAX_QUE 20
@@ -38,6 +39,7 @@ int acc_num = 0;
 
 int main(int argc, const char * argv[])
 {
+	
 //	struct Data database[20];
 	pthread_t t[20];
 	void *ret[20];
@@ -64,92 +66,46 @@ int main(int argc, const char * argv[])
     if((socketfd=socket(AF_INET,SOCK_STREAM,0))<0)//build socket link
     {
         perror("socket");
-        exit(1);
+        //exit(1);
     }
     //printf("Socket id = %d\n",socketfd);
     local_sockaddr.sin_family = AF_INET;
     local_sockaddr.sin_port    = htons(atoi(argv[1]));
-    local_sockaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    local_sockaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+    //local_sockaddr.sin_addr.s_addr = htonl(INADDR_ANY);
     //printf("server ip =%s\n",inet_ntoa(local_sockaddr.sin_addr));	//ip
     memset(local_sockaddr.sin_zero,0,8);
-    int i;
+    int i = 1;
+    signal(SIGPIPE, SIG_IGN);
+    //setsockopt(socketfd,SOL_SOCKET,SO_NOSIGPIPE,&i,sizeof(i));
     setsockopt(socketfd,SOL_SOCKET,SO_REUSEADDR,&i,sizeof(i));
     if(bind(socketfd,(struct sockaddr *)&local_sockaddr,sizeof(struct sockaddr))<0)
     {
         perror("bind");
-        exit(1);
+        //exit(1);
     }
     //printf("Bind success!\n");
     if(listen(socketfd,MAX_QUE)<0)	//listen passively
     {
         //perror("listen");
-        exit(1);
+        //exit(1);
     }
     //printf("%d listen\n", listen(socketfd,MAX_QUE));
     int c_num = 0;
 
     while(1){
-	       
-	/*fd_set server_fd_set;
-   	int max_fd = -1;
-   	struct timeval tv;
-    	tv.tv_sec = 20;
-        tv.tv_usec = 0;
-        FD_ZERO(&server_fd_set);
-        FD_SET(STDIN_FILENO, &server_fd_set);
-        if(max_fd <STDIN_FILENO)
-        {
-            max_fd = STDIN_FILENO;
-        }
-       
-        FD_SET(socketfd, &server_fd_set);
-        if(max_fd < socketfd)
-        {
-            max_fd = socketfd;
-        }
-      	int ret = select(max_fd + 1, &server_fd_set, NULL, NULL, &tv);
-        if(ret < 0)
-        {
-            //perror("select 出错\n");
-            continue;
-        }
-        else if(ret == 0)
-        {
-            //printf("select ..\n");
-            continue;
-        }
-	else{
-            if(FD_ISSET(STDIN_FILENO, &server_fd_set))  
-            {  
-               
-                bzero(input_msg, BUFFER_SIZE);  
-                fgets(input_msg, BUFFER_SIZE, stdin);  
-                
-		
-                if(!strncmp(input_msg, "quit", 4))  
-                { 
-		    	close(socketfd);
-                    	exit(0);  
-                }  
-		else if(!strncmp(input_msg, "ls", 2) || !strncmp(input_msg, "show", 4)){
-			printf("------------------------------------------------------------\n");
-                        for(int k = 0; k < acc_num; k++){
-                                printf("%d  %d  %s  %s  %s||\n", database[k].regis, database[k].login, database[k].name, database[k].email, database[k].password);
-                        }
-			printf("------------------------------------------------------------\n");
-		}
-	    }
-	}	    
-	*/
         
-
+	//printf("%d\n", clientfd);
 	    if((clientfd=accept(socketfd,(struct sockaddr*)NULL,NULL)) < 0)	//accept(), wait for client
         {
-		printf("herre\n");
+		//bzero(input_msg, BUFFER_SIZE);  
+                //fgets(input_msg, BUFFER_SIZE, stdin);
+		//if(!strncmp(input_msg, "quit", 4)) exit(0);
+		//printf("herre  %s||\n", input_msg);
 		//recv(clientfd, recv_msg, BUFFER_SIZE, 0);
 		//send(clientfd, recv_msg, sizeof(recv_msg), 0);
             perror("accept");
-            exit(1);
+            //exit(1);
         }
         printf("New connection.\n");
 	pthread_create(&t[c_num], NULL, conn, &clientfd);
@@ -160,7 +116,7 @@ int main(int argc, const char * argv[])
 		
 			//send(clientfd, recv_msg, sizeof(recv_msg), 0);
 			//close(socketfd);//关闭socket连接
-			/*
+			
                   struct sockaddr_in server, client;
             char server_ip[20];
                 char client_ip[20];
@@ -171,13 +127,15 @@ int main(int argc, const char * argv[])
             //printf("client ip:%s\tport:%d\n", client_ip, ntohs(client.sin_port));
             //close(clientfd);
             //exit(0);
-	    */
+	    
 //		}
   //      }
         //close(clientfd);
     }
 }
 void* conn(void *arg){
+	pthread_detach(pthread_self());
+
 	int fd = *(int*)arg;
 
 	int login_yn = 0, login_num = 0;
@@ -193,7 +151,7 @@ void* conn(void *arg){
                 //printf("%d\n\n", clientfd);
                 bzero(recv_msg, BUFFER_SIZE);
                 long tmp = recv(fd, recv_msg, BUFFER_SIZE, 0);
-		
+	if(tmp > 0){
                 if(!strncmp(recv_msg, "ls", 2)){
                         printf("------------------------------------------------------------\n");
                         for(int k = 0; k < acc_num; k++){
@@ -201,7 +159,7 @@ void* conn(void *arg){
                         }
 			printf("------------------------------------------------------------\n");
                 }
-		if(!strncmp(recv_msg, "register", 8)){
+		else if(!strncmp(recv_msg, "register", 8)){
 			//printf("begin %s\n", recv_msg);
 			char *delim = " ";
 			char *pch;
@@ -381,7 +339,9 @@ void* conn(void *arg){
 			acc_num += 10;
 		}
 		else{
+			//signal(SIGPIPE,SIG_IGN);
 			send(fd, ERR7, sizeof(ERR7), 0);
 		}
+	}
 	}
 }
