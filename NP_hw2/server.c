@@ -32,6 +32,7 @@
 #define SUC2 "Welcome, "
 #define SUC3 "Bye, "
 #define SUC4 "Create board successfully.\n"
+#define SUC5 "Create post successfully.\n"
 
 void* conn(void *arg);
 void fix_endline(char fixed[]){
@@ -55,22 +56,30 @@ void substr(char *dest, char *src, int start, int cnt){
 
 typedef struct Data Data;
 typedef struct Board Borad;
+typedef struct Post Post;
 
 struct Data{
 	int regis, login;
 	char name[100], email[100], password[100];
 };
-struct Data database[20];
 
 struct Board{
 	char name[100], title[1024], content[1024], moderator[100];
 	int num;
+	
 };
+
+struct Post{
+	int id;
+	char title[100], author[100], date[100];
+};
+
+struct Data database[20];
 struct Board allboard[51];
 
 int acc_num = 0;
 int acc_board = 0;
-
+int acc_post = 0;
 int main(int argc, const char * argv[])
 {
 	
@@ -430,12 +439,27 @@ void* conn(void *arg){
 			}
 			else{
 				if(!strncmp(recv_msg, "create-post ", 12)){
-					char *name = strdup(recv_msg + 12);
-					char *title = strstr(recv_msg, "--title");
-					int len = strlen(name)- strlen(title);
-					char newname[100];
-					substr(newname, name, 0, len-1);
-					printf("%slll\n", newname);
+					if(strstr(recv_msg, " --title ") == NULL || strstr(recv_msg, " --content ") == NULL){
+						send(fd, ERR11, sizeof(ERR11), 0);
+					}
+					else{
+						char *name = strdup(recv_msg + 12);
+						char *title = strstr(recv_msg, "--title");
+						int len = strlen(name)- strlen(title);
+						char bname[100];
+						substr(bname, name, 0, len-1);
+						int exist = 0;
+					
+						for(int l = 1; l <= acc_board; l++){
+							if(!strcmp(bname, allboard[l].name)) exist = 1;
+						}
+						if(exist == 0){	//not exist
+							send(fd, ERR9, sizeof(ERR9), 0);
+						}
+						else{
+							send(fd, SUC5, sizeof(SUC5), 0);
+						}
+					}
 				}
 
 			}	
