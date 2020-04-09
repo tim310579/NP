@@ -38,7 +38,7 @@ void fix_endline(char fixed[]){
 	char temp[100] = "";
 	int flag = 0;
         for(int l = 0; l < 100; l++){
-        	if(fixed[l] == '\n'){
+        	if(fixed[l] == '\n' || fixed[l] == ' '){
      	   		strncpy(temp, fixed, l-1);
 			flag = 1;
 			break;
@@ -47,6 +47,10 @@ void fix_endline(char fixed[]){
 	if(flag == 0) strcpy(temp, fixed);
 	strcpy(fixed, temp);
 	//return fixed;
+}
+void substr(char *dest, char *src, int start, int cnt){
+	strncpy(dest, src + start, cnt);
+	dest[cnt] = 0;
 }
 
 typedef struct Data Data;
@@ -421,7 +425,20 @@ void* conn(void *arg){
 			}
 		}
 		else if(!strncmp(recv_msg, "create-post", 11)){
-			
+			if(login_yn == 0){
+				send(fd, ERR6, sizeof(ERR6), 0);
+			}
+			else{
+				if(!strncmp(recv_msg, "create-post ", 12)){
+					char *name = strdup(recv_msg + 12);
+					char *title = strstr(recv_msg, "--title");
+					int len = strlen(name)- strlen(title);
+					char newname[100];
+					substr(newname, name, 0, len-1);
+					printf("%slll\n", newname);
+				}
+
+			}	
 		}
 		else if(!strncmp(recv_msg, "adddata", 7)){
 			
