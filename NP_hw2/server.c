@@ -23,6 +23,8 @@
 #define ERR7 "Wrong Command.\n"
 #define ERR8 "Board is already exist.\n"
 #define ERR9 "Board is not exist.\n"
+#define ERR10 "Usage: create-board <name>\n"
+#define ERR11 "Usage: create-post <board-name> --title <title> --content <content>\n"
 
 
 #define SUC0 "********************************\n** Welcome to the BBS server. **\n********************************\n"
@@ -362,73 +364,64 @@ void* conn(void *arg){
 				send(fd, ERR6, sizeof(ERR6), 0);
 			}
 			else{
-				char *delim = " ";
-				char *pch;
-				pch = strtok(recv_msg, delim);
-				int tmp = 0;
-				char tmp0[100] = "", tmp1[100] = "";
-				while(pch != NULL){
-					if(tmp >= 2) break;
-					switch(tmp){
-						case 0:
-							strcpy(tmp0, pch);
-						case 1:
-							strcpy(tmp1, pch);
-						
+				if(!strncmp(recv_msg, "create-board ", 13)){
+					int tmp = 0;
+					char tmp0[100] = "", tmp1[100] = "";
+					strncpy(tmp0, recv_msg, 12);
+					strcpy(tmp1, recv_msg+13);
+					fix_endline(tmp1);
+					int repeat_name = 0;
+					for(int l = 0; l < acc_board; l++){//check repeated name
+						if(!strcmp(tmp1, allboard[l].name)){
+							repeat_name = 1;
+						}
 					}
-					tmp ++;
-					if(tmp >= 2) break;
-					pch = strtok(NULL, delim);
-				}
-				char temp[100] = "";
-				int flag = 0;
-                        	for(int l = 0; l < 100; l++){
-                                	if(tmp1[l] == '\n'){
-                                        	strncpy(temp, tmp1, l-1);
-						flag = 1;
-						break;
-                                	}
-                        	}
-				if(flag == 0) strcpy(temp, tmp1);
-				strcpy(tmp1, temp);
-				int repeat_name = 0;
-				for(int l = 0; l < acc_board; l++){//check repeated name
-					if(!strcmp(tmp1, allboard[l].name)){
-						repeat_name = 1;
+					if(!strcmp(tmp1, "")){
+						send(fd, ERR10, sizeof(ERR10), 0);
 					}
+					else if(repeat_name == 1){
+						send(fd, ERR8, sizeof(ERR8), 0);
+					}
+					else if(repeat_name == 0){
+						acc_board ++;
+						strcpy(allboard[acc_board].name, tmp1);
+						allboard[acc_board].num = acc_board;
+						strcpy(allboard[acc_board].moderator, login_name);
+						send(fd, SUC4, sizeof(SUC4), 0);
+					}	
 				}
-				if(repeat_name == 1){
-					send(fd, ERR8, sizeof(ERR8), 0);
-				}
-				else if(repeat_name == 0){
-					acc_board ++;
-					strcpy(allboard[acc_board].name, tmp1);
-					allboard[acc_board].num = acc_board;
-					strcpy(allboard[acc_board].moderator, login_name);
-					send(fd, SUC4, sizeof(SUC4), 0);
-					
-				}
+				else{
+					send(fd, ERR10, sizeof(ERR10), 0);
+				}	
 			}
 		}
 		else if(!strncmp(recv_msg, "list-board ##", 13)){
 			char search[100];
 			strncpy(search, recv_msg + 13, 100);
 			fix_endline(search);
-			printf("Index     name      moderator\n", search);
+			char send0[100] = "";
+			sprintf(send0, "    Index      Name       Moderator\n");
+			send(fd, send0, sizeof(send0), 0);
 			for(int l = 1; l <= acc_board; l++){
+				char send_msg[1024] = "";
 				if(strstr(allboard[l].name, search) != NULL || strstr(allboard[l].moderator, search) != NULL){
-					printf("%10d%10s%10s\n", allboard[l].num, allboard[l].name, allboard[l].moderator);
+					sprintf(send_msg, "    %-11d%-11s%-11s\n", allboard[l].num, allboard[l].name, allboard[l].moderator);
+					send(fd, send_msg, sizeof(send_msg), 0);
 				}
 			}
 		}
 		else if(!strncmp(recv_msg, "list-board", 10)){
-			printf("Index     name      moderator\n");
+			char send0[100] = "";
+			sprintf(send0, "    Index      Name       Moderator\n");
+                        send(fd, send0, sizeof(send0), 0);
 			for(int l = 1; l <= acc_board; l++){
-				printf("%10d%10s%10s\n", allboard[l].num, allboard[l].name, allboard[l].moderator);
+				char send_msg[1024] = "";
+				sprintf(send_msg, "    %-11d%-11s%-11s\n", allboard[l].num, allboard[l].name, allboard[l].moderator);
+				send(fd, send_msg, sizeof(send_msg), 0);
 			}
 		}
 		else if(!strncmp(recv_msg, "create-post", 11)){
-
+			
 		}
 		else if(!strncmp(recv_msg, "adddata", 7)){
 			
