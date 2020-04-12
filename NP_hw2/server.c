@@ -10,6 +10,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <signal.h>
+#include <time.h>
 
 #define STDIN 0
 #define MAX_QUE 20
@@ -25,6 +26,7 @@
 #define ERR9 "Board is not exist.\n"
 #define ERR10 "Usage: create-board <name>\n"
 #define ERR11 "Usage: create-post <board-name> --title <title> --content <content>\n"
+#define ERR12 "Usage: list-post <board-name> ##<key>\n"
 
 
 #define SUC0 "********************************\n** Welcome to the BBS server. **\n********************************\n"
@@ -49,9 +51,31 @@ void fix_endline(char fixed[]){
 	strcpy(fixed, temp);
 	//return fixed;
 }
+
 void substr(char *dest, char *src, int start, int cnt){
 	strncpy(dest, src + start, cnt);
 	dest[cnt] = 0;
+}
+
+void *strrpc(char str[], char oldstr[], char newstr[]){
+	char bstr[strlen(str)];//buffer
+	memset(bstr,0,sizeof(bstr));
+	for(int i = 0;i < strlen(str);i++){
+        	if(!strncmp(str+i,oldstr,strlen(oldstr))){//查詢目標字串
+	            strcat(bstr,newstr);
+        	    i += strlen(oldstr) - 1;
+        	}
+		else{
+        	    strncat(bstr,str + i,1);//儲存一位元組進緩衝區
+	    	}
+    	}
+	strcpy(str, bstr);
+}
+
+void fix_content(char fixed[]){
+	char old[10] = "<br>";
+	char new[10] = "\n";
+	strrpc(fixed, old, new);
 }
 
 typedef struct Data Data;
@@ -70,12 +94,13 @@ struct Board{
 };
 
 struct Post{
-	int id;
-	char title[100], author[100], date[100];
+	int id, exist;
+	char title[1024], author[100], datey[100], datem[100], bname[100], content[1024];
 };
 
 struct Data database[20];
-struct Board allboard[51];
+struct Board allboard[101];
+struct Post posts[101];
 
 int acc_num = 0;
 int acc_board = 0;
@@ -92,19 +117,28 @@ int main(int argc, const char * argv[])
 
 
 	for(j = 0; j < 20; j++){
-		//Data* database[7] = (Data*)malloc(sizeof(Data));
+		//database[j] = (Data*)malloc(sizeof(Data));
 		database[j].regis = 0;
 		database[j].login = 0;
 		strcpy(database[j].name, "");
 		strcpy(database[j].email, "");
 		strcpy(database[j].password, "");
 	}
-	for(j = 0; j < 51; j++){
+	for(j = 0; j < 101; j++){
 		allboard[j].num = 0;
 		strcpy(allboard[j].name, "");
 		strcpy(allboard[j].title, "");
 		strcpy(allboard[j].content, "");
 		strcpy(allboard[j].moderator, "");
+
+		posts[j].id = 0;
+		posts[j].exist = 0;
+		strcpy(posts[j].title, "");
+		strcpy(posts[j].author, "");
+		strcpy(posts[j].datey, "");
+		strcpy(posts[j].datem, "");
+		strcpy(posts[j].bname, "");
+		strcpy(posts[j].content, "");
 	}
 
 	char recv_msg[BUFFER_SIZE];  
@@ -445,24 +479,112 @@ void* conn(void *arg){
 					else{
 						char *name = strdup(recv_msg + 12);
 						char *title = strstr(recv_msg, "--title");
-						int len = strlen(name)- strlen(title);
+						int len = strlen(name) - strlen(title);
 						char bname[100];
 						substr(bname, name, 0, len-1);
+						
 						int exist = 0;
 					
 						for(int l = 1; l <= acc_board; l++){
 							if(!strcmp(bname, allboard[l].name)) exist = 1;
 						}
+						char title0[1024]; 
+						strcpy(title0, title + 8);
+						char *content = strstr(recv_msg, "--content");
+						int len2 = strlen(title0) - strlen(content);
+						char titlename[1024];
+						substr(titlename, title0, 0, len2-1);
+
+						char real_content[1024];
+						strcpy(real_content, content + 10);
+						//printf("%s\n%s\n%s\n", bname, titlename, real_content);
+
+
 						if(exist == 0){	//not exist
 							send(fd, ERR9, sizeof(ERR9), 0);
 						}
 						else{
+							acc_post ++;
+							posts[acc_post].id = acc_post;
+							posts[acc_post].exist = 1;
+							strcpy(posts[acc_post].bname, bname);
+							strcpy(posts[acc_post].title, titlename);
+							strcpy(posts[acc_post].author, login_name);
+							fix_content(real_content);
+							strcpy(posts[acc_post].content, real_content);
+							time_t p;
+							struct tm *tp;
+							time(&p);
+							tp = localtime(&p);
+							char temp_time[100];
+							sprintf(temp_time, "%04d-%02d-%02d", tp->tm_year+1900, tp->tm_mon+1, tp->tm_mday);
+							strcpy(posts[acc_post].datey, temp_time);
+
+							sprintf(temp_time, "%02d/%02d", tp->tm_mon+1, tp->tm_mday);
+							strcpy(posts[acc_post].datem, temp_time);
+
+
 							send(fd, SUC5, sizeof(SUC5), 0);
 						}
 					}
 				}
-
+				else {
+					send(fd, ERR11, sizeof(ERR11), 0);
+				}
 			}	
+		}
+		
+		else if(!strncmp(recv_msg, "list-post", 9)){
+			if(!strncmp(recv_msg, "list-post ", 10)){
+				if(strstr(recv_msg, " ##") != NULL){
+					char *tmp_bname = strdup(recv_msg + 10);
+					char *key = strstr(recv_msg, "##");
+					int len = strlen(tmp_bname) - strlen(key);
+					char board_name[100];
+					substr(board_name, tmp_bname, 0, len-1);
+					int exist = 0;
+					for(int l = 1; l <= acc_board; l++){
+						if(!strcmp(board_name, allboard[l].name)) exist = 1;
+					}
+					if(exist == 0){	//not exist
+						send(fd, ERR9, sizeof(ERR9), 0);
+					}
+					else{
+					
+					}
+				}
+				else{
+					char board_name[100];
+					strcpy(board_name, recv_msg + 10);
+					fix_endline(board_name);
+					int exist = 0;
+                                        for(int l = 1; l <= acc_board; l++){
+                                                if(!strcmp(board_name, allboard[l].name)) exist = 1;
+                                        }
+                                        if(exist == 0){ //not exist
+                                                send(fd, ERR9, sizeof(ERR9), 0);
+                                        }
+                                        else{
+						char send0[100] = "";
+						sprintf(send0, "    Id               Title            Author           Date\n");
+						send(fd, send0, sizeof(send0), 0);
+						for(int l = 0; l <= acc_post; l++){
+							char send_msg[4000] = "";
+							printf("%s||%s||\n", board_name, posts[l].bname);
+							if(!strcmp(board_name, posts[l].bname)){
+
+								sprintf(send_msg, "    %-17d%-17s%-17s%-17s\n", posts[l].id, posts[l].title, posts[l].author, posts[l].datem);
+								send(fd, send_msg, sizeof(send_msg), 0);
+							}
+						}
+                                        }
+
+				}			
+				
+			}
+			else{
+				send(fd, ERR12, sizeof(ERR12), 0);
+			}
 		}
 		else if(!strncmp(recv_msg, "adddata", 7)){
 			
