@@ -42,8 +42,8 @@
 #define SUC4 "Create board successfully.\n"
 #define SUC5 "Create post successfully.\n"
 #define SUC6 "Delete successfully.\n"
-#define SUC7 "Remain data success.\n"
-#define SUC8 "File in success.\n"
+#define SUC7 "Store data success.\n"
+#define SUC8 "Load data success.\n"
 #define SUC9 "Update successfully.\n"
 #define SUC10 "Comment successfully.\n"
 
@@ -811,7 +811,7 @@ void* conn(void *arg){
 			}
 			acc_num += 10;
 		}
-		else if(!strncmp(recv_msg, "remain", 6)){
+		else if(!strncmp(recv_msg, "store", 5)){
 			FILE *outfp;
 			outfp = fopen("data.txt", "w");
 			fprintf(outfp, "user:\n%d\n", acc_num);
@@ -834,7 +834,7 @@ void* conn(void *arg){
 			send(fd, SUC7, sizeof(SUC7), 0);
 			fclose(outfp);
 		}
-		else if(!strncmp(recv_msg, "filein", 6)){
+		else if(!strncmp(recv_msg, "load", 4)){
 			FILE *infp;
 			infp = fopen("data.txt", "r");
 			if(infp == NULL){

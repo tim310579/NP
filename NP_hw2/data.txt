@@ -7,7 +7,7 @@ user:
 1 0 a4 a44 4
 1 0 a5 a55 5
 1 0 a6 a66 6
-1 0 a7 a77 7
+1 1 a7 a77 7
 1 0 a8 a88 8
 1 0 a9 a99 9
 board:
@@ -41,8 +41,9 @@ akak
      hwhe
      jfjf
 content is over
-1
+2
 a5: dsf
+a7: tyt
 bbb
 3
 1
@@ -53,4 +54,5 @@ adad
 halal
      ttt
 content is over
-0
+1
+a7: fsdf
