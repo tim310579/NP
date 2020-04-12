@@ -32,6 +32,8 @@
 #define ERR15 "Not the post owner.\n"
 #define ERR16 "Usage: delete-post <post-id>\n"
 #define ERR17 "No data now.\n"
+#define ERR18 "Usage: update-post <post-id> --title/content <new>\n"
+
 
 #define SUC0 "********************************\n** Welcome to the BBS server. **\n********************************\n"
 #define SUC1 "Register successfully.\n"
@@ -42,18 +44,36 @@
 #define SUC6 "Delete successfully.\n"
 #define SUC7 "Remain data success.\n"
 #define SUC8 "File in success.\n"
+#define SUC9 "Update successfully.\n"
 
 void* conn(void *arg);
+
+void fix_lines(char fixed[]){
+	char temp[1000] = "";
+        int flag = 0;
+        for(int l = 0; l < 1000; l++){
+                if(fixed[l] == '\n'){
+                        strncpy(temp, fixed, l);
+                        flag = 1;
+                        break;
+                }
+        }
+
+        if(flag == 0) strcpy(temp, fixed);
+        strcpy(fixed, temp);
+}
 void fix_endline(char fixed[]){
 	char temp[100] = "";
 	int flag = 0;
         for(int l = 0; l < 100; l++){
         	if(fixed[l] == '\n' || fixed[l] == ' '){
-     	   		strncpy(temp, fixed, l-1);
+     	   		if(fixed[l] == '\n') strncpy(temp, fixed, l-1);
+			else strncpy(temp, fixed, l);
 			flag = 1;
 			break;
                 }
         }
+	
 	if(flag == 0) strcpy(temp, fixed);
 	strcpy(fixed, temp);
 	//return fixed;
@@ -64,7 +84,7 @@ void substr(char *dest, char *src, int start, int cnt){
 	dest[cnt] = 0;
 }
 
-void *strrpc(char str[], char oldstr[], char newstr[]){
+void strrpc(char str[], char oldstr[], char newstr[]){
 	char bstr[strlen(str)];//buffer
 	memset(bstr,0,sizeof(bstr));
 	for(int i = 0;i < strlen(str);i++){
@@ -582,7 +602,9 @@ void* conn(void *arg){
 				else{
 					char board_name[100];
 					strcpy(board_name, recv_msg + 10);
+					//printf("%s||\n", board_name);
 					fix_endline(board_name);
+					//printf("%s||\n", board_name);
 					int exist = 0;
                                         for(int l = 1; l <= acc_board; l++){
                                                 if(!strcmp(board_name, allboard[l].name)) exist = 1;
@@ -665,6 +687,68 @@ void* conn(void *arg){
 				send(fd, ERR16, sizeof(ERR16), 0);
 			}
 		}
+		else if(!strncmp(recv_msg, "update-post", 11)){
+			if(!strncmp(recv_msg, "update-post ", 12)){
+				if(login_yn == 0){
+                                        send(fd, ERR6, sizeof(ERR6), 0);
+                                }
+				else if(strstr(recv_msg, " --title ") == NULL && strstr(recv_msg, " --content ") == NULL){
+					send(fd, ERR18, sizeof(ERR18), 0);
+				}
+				else{
+					char *tmp_id = strdup(recv_msg + 12);
+					if(strstr(recv_msg, "--title")){	//update title
+						char *title = strstr(recv_msg, "--title");
+						int len = strlen(tmp_id) - strlen(title);
+						char real_id[10];
+						substr(real_id, tmp_id, 0, len-1);
+						int true_id = atoi(real_id);
+						if(posts[true_id].exist == 0){
+							send(fd, ERR13, sizeof(ERR13), 0);
+						}
+						else{
+							if(!strcmp(posts[true_id].author, login_name)){
+								char real_title[1024];
+                                                        	strcpy(real_title, title + 8);
+								fix_lines(real_title);
+                                             	           	strcpy(posts[true_id].title, real_title);
+                                                	        send(fd, SUC9, sizeof(SUC9), 0); //is owner
+							}
+							else{
+								send(fd, ERR15, sizeof(ERR15), 0); //not owner
+							}
+						}
+					}
+					else if(strstr(recv_msg, "--content")){	//update content
+						char *content = strstr(recv_msg, "--content");
+                                                int len = strlen(tmp_id) - strlen(content);
+                                                char real_id[10];
+                                                substr(real_id, tmp_id, 0, len-1);
+                                                int true_id = atoi(real_id);
+                                                if(posts[true_id].exist == 0){
+                                                        send(fd, ERR13, sizeof(ERR13), 0);
+                                                }
+                                                else{
+                                                        if(!strcmp(posts[true_id].author, login_name)){
+                                                                char real_content[1024];
+                                                                strcpy(real_content, content + 10);
+                                                            	fix_content(real_content);
+							    	strcpy(posts[true_id].content, real_content);
+                                                                send(fd, SUC9, sizeof(SUC9), 0); //is owner
+                                                        }
+                                                        else{
+                                                                send(fd, ERR15, sizeof(ERR15), 0); //not owner
+                                                        }
+                                                }
+					}
+					
+				}
+			}
+			else{
+				send(fd, ERR18, sizeof(ERR18), 0);
+			}
+			
+		}
 		else if(!strncmp(recv_msg, "adddata", 7)){
 			
 			for(int h = acc_num; h < acc_num + 10; h++){
@@ -695,7 +779,7 @@ void* conn(void *arg){
 			}
 			fprintf(outfp, "post:\n%d\n", acc_post);
 			for(int j = 1; j <= acc_post; j++){
-				fprintf(outfp, "board_name:%s\n%d %d\nauthor:%s\ntitle:%s\ndatey:%s\ndatem:%s\ncontent:%s\n", posts[j].bname, posts[j].id, posts[j].exist, posts[j].author, posts[j].title, posts[j].datey, posts[j].datem, posts[j].content);
+				fprintf(outfp, "%s\n%d\n%d\n%s\n%s\n%s\n%s\n%scontent is over\n", posts[j].bname, posts[j].id, posts[j].exist, posts[j].author, posts[j].title, posts[j].datey, posts[j].datem, posts[j].content);
 			}
 			send(fd, SUC7, sizeof(SUC7), 0);
 			fclose(outfp);
@@ -743,7 +827,7 @@ void* conn(void *arg){
 					//printf("%s\n", pch);
 					//pch = strtok(NULL, delim);
 				}
-				fgets(tmp_buf, 1024, infp);
+				fgets(tmp_buf, 1024, infp);	//read boards
 				fgets(tmp_num, 10, infp);
 				real_num = atoi(tmp_num);
 				for(int i = 1; i <= real_num; i++){
@@ -763,8 +847,56 @@ void* conn(void *arg){
 								break;
 
 						}
-						printf("%s\n", pch);
+						//printf("%s\n", pch);
 						pch = strtok(NULL, delim);
+					}
+
+				}
+				fgets(tmp_buf, 1024, infp);	//read posts
+                                fgets(tmp_num, 10, infp);
+                                real_num = atoi(tmp_num);
+				for(int i = 1; i <= real_num; i++){
+					acc_post ++;
+					fgets(tmp_buf, 1024, infp);	//board name
+					fix_lines(tmp_buf);
+					strcpy(posts[i].bname, tmp_buf);
+				
+					fgets(tmp_buf, 1024, infp);	//id
+                                        fix_lines(tmp_buf);
+                                        posts[i].id = atoi(tmp_buf);
+
+					fgets(tmp_buf, 1024, infp);	//existed
+                                        fix_lines(tmp_buf);
+                                        posts[i].exist = atoi(tmp_buf);
+
+				//printf("here%s\n", tmp_buf);
+
+					fgets(tmp_buf, 1024, infp);     //author
+                                        fix_lines(tmp_buf);
+                                        strcpy(posts[i].author, tmp_buf);
+
+				//printf("here%s\n", tmp_buf);
+
+					fgets(tmp_buf, 1024, infp);     //title
+                                        fix_lines(tmp_buf);
+                                        strcpy(posts[i].title, tmp_buf);
+
+				//printf("here%s\n", tmp_buf);
+					fgets(tmp_buf, 1024, infp);     //datey
+                                        fix_lines(tmp_buf);
+                                        strcpy(posts[i].datey, tmp_buf);
+				//printf("here%s\n", tmp_buf);
+
+					fgets(tmp_buf, 1024, infp);     //datem
+                                        fix_lines(tmp_buf);
+                                        strcpy(posts[i].datem, tmp_buf);
+					
+				//printf("here%s\n", tmp_buf);
+					while(1){	//content
+						fgets(tmp_buf, 1024, infp);
+						//printf("here%s\n", tmp_buf);
+						if(!strncmp(tmp_buf, "content is over", 15)) break;
+						strcat(posts[i].content, tmp_buf);
 					}
 
 				}
@@ -773,6 +905,7 @@ void* conn(void *arg){
 			send(fd, SUC8, sizeof(SUC8), 0);
 			fclose(infp);
 		}
+
 		else{
 			//signal(SIGPIPE,SIG_IGN);
 			send(fd, ERR7, sizeof(ERR7), 0);
