@@ -1,0 +1,56 @@
+user:
+10
+1 0 a0 a00 0
+1 0 a1 a11 1
+1 0 a2 a22 2
+1 1 a3 a33 3
+1 0 a4 a44 4
+1 0 a5 a55 5
+1 0 a6 a66 6
+1 0 a7 a77 7
+1 0 a8 a88 8
+1 0 a9 a99 9
+board:
+2
+1 aaa a5
+2 bbb a5
+post:
+3
+aaa
+1
+1
+a5
+ghgh ggj
+2020-04-12
+04/12
+lalal
+     haha
+content is over
+3
+a5: jaja
+a5: lalal
+a3: rur??
+aaa
+2
+1
+a5
+fjfj
+2020-04-12
+04/12
+akak
+     hwhe
+     jfjf
+content is over
+1
+a5: dsf
+bbb
+3
+1
+a5
+adad
+2020-04-12
+04/12
+halal
+     ttt
+content is over
+0

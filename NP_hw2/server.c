@@ -33,7 +33,7 @@
 #define ERR16 "Usage: delete-post <post-id>\n"
 #define ERR17 "No data now.\n"
 #define ERR18 "Usage: update-post <post-id> --title/content <new>\n"
-
+#define ERR19 "Usage: comment <post-id> <comment>\n"
 
 #define SUC0 "********************************\n** Welcome to the BBS server. **\n********************************\n"
 #define SUC1 "Register successfully.\n"
@@ -45,6 +45,7 @@
 #define SUC7 "Remain data success.\n"
 #define SUC8 "File in success.\n"
 #define SUC9 "Update successfully.\n"
+#define SUC10 "Comment successfully.\n"
 
 void* conn(void *arg);
 
@@ -121,8 +122,9 @@ struct Board{
 };
 
 struct Post{
-	int id, exist;
+	int id, exist, comment_cnt;
 	char title[1024], author[100], datey[100], datem[100], bname[100], content[1024];
+	char **comments;
 };
 
 struct Data database[100];
@@ -147,6 +149,7 @@ int main(int argc, const char * argv[])
 		//database[j] = (Data*)malloc(sizeof(Data));
 		database[j].regis = 0;
 		database[j].login = 0;
+		//database[j].name = (char*)malloc(sizeof(char)*100);
 		strcpy(database[j].name, "");
 		strcpy(database[j].email, "");
 		strcpy(database[j].password, "");
@@ -158,12 +161,17 @@ int main(int argc, const char * argv[])
 
 		posts[j].id = 0;
 		posts[j].exist = 0;
+		posts[j].comment_cnt = 0;
 		strcpy(posts[j].title, "");
 		strcpy(posts[j].author, "");
 		strcpy(posts[j].datey, "");
 		strcpy(posts[j].datem, "");
 		strcpy(posts[j].bname, "");
 		strcpy(posts[j].content, "");
+		posts[j].comments = (char**)malloc(sizeof(char*)*101);
+		for(int k = 0; k <= 100; k++){
+			posts[j].comments[k] = (char*)malloc(sizeof(char)*100);
+		}
 	}
 
 	char recv_msg[BUFFER_SIZE];  
@@ -644,7 +652,7 @@ void* conn(void *arg){
 					send(fd, ERR13, sizeof(ERR13), 0);
 				}
 				else{
-					char send_author[200], send_title[1040], send_date[200], send_content[1100];
+					char send_author[200], send_title[1040], send_date[200], send_content[1100], send_comment[120];
 					sprintf(send_author, "    Author    :%s\n", posts[real_id].author);
 					sprintf(send_title, "    Title     :%s\n", posts[real_id].title);
 					sprintf(send_date, "    Date      :%s\n", posts[real_id].datey);
@@ -654,6 +662,10 @@ void* conn(void *arg){
 					send(fd, send_title, strlen(send_title), 0);
 					send(fd, send_date, strlen(send_date), 0);
 					send(fd, send_content, strlen(send_content), 0);
+					for(int k = 1; k <= posts[real_id].comment_cnt; k++){
+						sprintf(send_comment, "     %s", posts[real_id].comments[k]);
+						send(fd, send_comment, strlen(send_comment), 0);
+					}
 
 				}
 			}
@@ -749,6 +761,40 @@ void* conn(void *arg){
 			}
 			
 		}
+		else if(!strncmp(recv_msg, "comment", 7)){
+			if(!strncmp(recv_msg, "comment ", 8)){
+				if(login_yn == 0){
+					send(fd, ERR6, sizeof(ERR6), 0);
+				}
+				else{
+					char *delim = " ";
+					char *pch;
+					pch = strtok(recv_msg, delim);
+					pch = strtok(NULL, delim);
+					//printf("%s\n", pch);
+					int real_id = atoi(pch);
+					if(posts[real_id].exist == 0){	//not exist
+						send(fd, ERR13, sizeof(ERR13), 0);
+					}
+					else{
+						char pch0[100];
+						int len = strlen(pch) + 8 + 2;
+						strcpy(pch0, recv_msg + len);
+						fix_content(pch0);
+						char tmp_comment[100];
+						strcpy(tmp_comment, login_name);
+						strcat(tmp_comment, ": ");
+						strcat(tmp_comment, pch0);
+						posts[real_id].comment_cnt ++;
+						posts[real_id].comments[posts[real_id].comment_cnt] = strdup(tmp_comment);
+						send(fd, SUC10, sizeof(SUC10), 0);
+					}
+				}	
+			}
+			else{
+				send(fd, ERR19, sizeof(ERR19), 0);
+			}
+		}
 		else if(!strncmp(recv_msg, "adddata", 7)){
 			
 			for(int h = acc_num; h < acc_num + 10; h++){
@@ -779,8 +825,12 @@ void* conn(void *arg){
 			}
 			fprintf(outfp, "post:\n%d\n", acc_post);
 			for(int j = 1; j <= acc_post; j++){
-				fprintf(outfp, "%s\n%d\n%d\n%s\n%s\n%s\n%s\n%scontent is over\n", posts[j].bname, posts[j].id, posts[j].exist, posts[j].author, posts[j].title, posts[j].datey, posts[j].datem, posts[j].content);
+				fprintf(outfp, "%s\n%d\n%d\n%s\n%s\n%s\n%s\n%scontent is over\n%d\n", posts[j].bname, posts[j].id, posts[j].exist, posts[j].author, posts[j].title, posts[j].datey, posts[j].datem, posts[j].content, posts[j].comment_cnt);
+				for(int k = 1; k <= posts[j].comment_cnt; k++){
+					fprintf(outfp, "%s", posts[j].comments[k]);
+				}
 			}
+			
 			send(fd, SUC7, sizeof(SUC7), 0);
 			fclose(outfp);
 		}
@@ -898,6 +948,16 @@ void* conn(void *arg){
 						if(!strncmp(tmp_buf, "content is over", 15)) break;
 						strcat(posts[i].content, tmp_buf);
 					}
+
+					fgets(tmp_buf, 1024, infp);     //comment_cnt
+                                        fix_lines(tmp_buf);
+					int comment_cnt = atoi(tmp_buf);
+					posts[i].comment_cnt = comment_cnt;
+					for(int k = 1; k <= comment_cnt; k++){
+						fgets(tmp_buf, 1024, infp);	//comments
+						posts[i].comments[k] = strdup(tmp_buf);
+					}
+
 
 				}
 
