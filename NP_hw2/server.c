@@ -743,10 +743,34 @@ void* conn(void *arg){
 					//printf("%s\n", pch);
 					//pch = strtok(NULL, delim);
 				}
-		
+				fgets(tmp_buf, 1024, infp);
+				fgets(tmp_num, 10, infp);
+				real_num = atoi(tmp_num);
+				for(int i = 1; i <= real_num; i++){
+					acc_board++;
+					fgets(tmp_buf, 1024, infp);
+					pch = strtok(tmp_buf, delim);
+					for(int j = 0; j < 3; j++){
+						switch(j){
+							case 0:
+								allboard[i].num = atoi(pch);
+								break;
+							case 1:
+								strcpy(allboard[i].name, pch);
+								break;
+							case 2:
+								strncpy(allboard[i].moderator, pch, strlen(pch)-1);	//delete '\n'
+								break;
+
+						}
+						printf("%s\n", pch);
+						pch = strtok(NULL, delim);
+					}
+
+				}
 
 			}
-			send(fd, "File in success.\n", 20, 0);
+			send(fd, SUC8, sizeof(SUC8), 0);
 			fclose(infp);
 		}
 		else{
