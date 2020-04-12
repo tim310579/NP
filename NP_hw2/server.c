@@ -27,7 +27,11 @@
 #define ERR10 "Usage: create-board <name>\n"
 #define ERR11 "Usage: create-post <board-name> --title <title> --content <content>\n"
 #define ERR12 "Usage: list-post <board-name> ##<key>\n"
-
+#define ERR13 "Post is not exist.\n"
+#define ERR14 "Usage: read <post-id>\n"
+#define ERR15 "Not the post owner.\n"
+#define ERR16 "Usage: delete-post <post-id>\n"
+#define ERR17 "No data now.\n"
 
 #define SUC0 "********************************\n** Welcome to the BBS server. **\n********************************\n"
 #define SUC1 "Register successfully.\n"
@@ -35,6 +39,9 @@
 #define SUC3 "Bye, "
 #define SUC4 "Create board successfully.\n"
 #define SUC5 "Create post successfully.\n"
+#define SUC6 "Delete successfully.\n"
+#define SUC7 "Remain data success.\n"
+#define SUC8 "File in success.\n"
 
 void* conn(void *arg);
 void fix_endline(char fixed[]){
@@ -74,7 +81,7 @@ void *strrpc(char str[], char oldstr[], char newstr[]){
 
 void fix_content(char fixed[]){
 	char old[10] = "<br>";
-	char new[10] = "\n";
+	char new[10] = "\n     ";
 	strrpc(fixed, old, new);
 }
 
@@ -88,7 +95,7 @@ struct Data{
 };
 
 struct Board{
-	char name[100], title[1024], content[1024], moderator[100];
+	char name[100], moderator[100];
 	int num;
 	
 };
@@ -98,7 +105,7 @@ struct Post{
 	char title[1024], author[100], datey[100], datem[100], bname[100], content[1024];
 };
 
-struct Data database[20];
+struct Data database[100];
 struct Board allboard[101];
 struct Post posts[101];
 
@@ -116,7 +123,7 @@ int main(int argc, const char * argv[])
 	int j;
 
 
-	for(j = 0; j < 20; j++){
+	for(j = 0; j < 100; j++){
 		//database[j] = (Data*)malloc(sizeof(Data));
 		database[j].regis = 0;
 		database[j].login = 0;
@@ -127,8 +134,6 @@ int main(int argc, const char * argv[])
 	for(j = 0; j < 101; j++){
 		allboard[j].num = 0;
 		strcpy(allboard[j].name, "");
-		strcpy(allboard[j].title, "");
-		strcpy(allboard[j].content, "");
 		strcpy(allboard[j].moderator, "");
 
 		posts[j].id = 0;
@@ -255,12 +260,16 @@ void* conn(void *arg){
 				switch(tmp){
 					case 0:
 						strcpy(tmp0, pch);
+						break;
 					case 1:
 						strcpy(tmp1, pch);
+						break;
 					case 2:
 						strcpy(tmp2, pch);
+						break;
 					case 3:
 						strcpy(tmp3, pch);
+						break;
 				}	
 				tmp++;
 				if(tmp >= 4) break;
@@ -314,10 +323,13 @@ void* conn(void *arg){
 				switch(tmp){
 					case 0:
 						strcpy(tmp0, pch);
+						break;
 					case 1:
 						strcpy(tmp1, pch);
+						break;
 					case 2:
 						strcpy(tmp2, pch);
+						break;
 				}
 				tmp++;
 				if(tmp >= 3) break;
@@ -418,7 +430,7 @@ void* conn(void *arg){
 					strcpy(tmp1, recv_msg+13);
 					fix_endline(tmp1);
 					int repeat_name = 0;
-					for(int l = 0; l < acc_board; l++){//check repeated name
+					for(int l = 0; l <= acc_board; l++){ //check repeated name
 						if(!strcmp(tmp1, allboard[l].name)){
 							repeat_name = 1;
 						}
@@ -542,6 +554,9 @@ void* conn(void *arg){
 					int len = strlen(tmp_bname) - strlen(key);
 					char board_name[100];
 					substr(board_name, tmp_bname, 0, len-1);
+					char real_key[100];
+					strcpy(real_key, key + 2);
+					fix_endline(real_key);
 					int exist = 0;
 					for(int l = 1; l <= acc_board; l++){
 						if(!strcmp(board_name, allboard[l].name)) exist = 1;
@@ -550,7 +565,18 @@ void* conn(void *arg){
 						send(fd, ERR9, sizeof(ERR9), 0);
 					}
 					else{
-					
+						char send0[100] = "";
+						sprintf(send0, "    Id               Title            Author           Date\n");
+						send(fd, send0, sizeof(send0), 0);
+						for(int l = 0; l <= acc_post; l++){
+							char send_msg[4000] = "";
+							//printf("%s||%s||\n", board_name, posts[l].bname);
+							if(!strcmp(board_name, posts[l].bname) && strstr(posts[l].title, real_key) != NULL && posts[l].exist > 0){	//bname is right && key matched && existed
+
+								sprintf(send_msg, "    %-17d%-17s%-17s%-17s\n", posts[l].id, posts[l].title, posts[l].author, posts[l].datem);
+								send(fd, send_msg, sizeof(send_msg), 0);
+							}
+						}
 					}
 				}
 				else{
@@ -570,8 +596,8 @@ void* conn(void *arg){
 						send(fd, send0, sizeof(send0), 0);
 						for(int l = 0; l <= acc_post; l++){
 							char send_msg[4000] = "";
-							printf("%s||%s||\n", board_name, posts[l].bname);
-							if(!strcmp(board_name, posts[l].bname)){
+							//printf("%s||%s||\n", board_name, posts[l].bname);
+							if(!strcmp(board_name, posts[l].bname) && posts[l].exist > 0){
 
 								sprintf(send_msg, "    %-17d%-17s%-17s%-17s\n", posts[l].id, posts[l].title, posts[l].author, posts[l].datem);
 								send(fd, send_msg, sizeof(send_msg), 0);
@@ -584,6 +610,59 @@ void* conn(void *arg){
 			}
 			else{
 				send(fd, ERR12, sizeof(ERR12), 0);
+			}
+		}
+		else if(!strncmp(recv_msg, "read", 4)){
+			if(!strncmp(recv_msg, "read ", 5)){
+				char tmp_id[10];
+				strcpy(tmp_id, recv_msg + 5);
+				fix_endline(tmp_id);
+				int real_id = atoi(tmp_id);
+				if(posts[real_id].exist == 0){	//not exist
+					send(fd, ERR13, sizeof(ERR13), 0);
+				}
+				else{
+					char send_author[200], send_title[1040], send_date[200], send_content[1100];
+					sprintf(send_author, "    Author    :%s\n", posts[real_id].author);
+					sprintf(send_title, "    Title     :%s\n", posts[real_id].title);
+					sprintf(send_date, "    Date      :%s\n", posts[real_id].datey);
+					sprintf(send_content, "    --\n     %s    --\n", posts[real_id].content);
+					
+					send(fd, send_author, strlen(send_author), 0);
+					send(fd, send_title, strlen(send_title), 0);
+					send(fd, send_date, strlen(send_date), 0);
+					send(fd, send_content, strlen(send_content), 0);
+
+				}
+			}
+			else{
+				send(fd, ERR14, sizeof(ERR14), 0);
+			}
+		}
+		else if(!strncmp(recv_msg, "delete-post", 11)){
+			if(!strncmp(recv_msg, "delete-post ", 12)){
+				char tmp_id[10];
+				strcpy(tmp_id, recv_msg + 12);
+                                fix_endline(tmp_id);
+                                int real_id = atoi(tmp_id);
+				if(login_yn == 0){	//login first
+					send(fd, ERR6, sizeof(ERR6), 0);
+				}
+				else if(posts[real_id].exist == 0){  //not exist
+                                        send(fd, ERR13, sizeof(ERR13), 0);
+                                }
+                                else{	//exist
+					if(!strcmp(login_name, posts[real_id].author)){	//is owner
+						posts[real_id].exist = 0;
+						send(fd, SUC6, sizeof(SUC6), 0);
+					}
+					else{	//not owner
+						send(fd, ERR15, sizeof(ERR15), 0);
+					}
+				}
+			}	
+			else{
+				send(fd, ERR16, sizeof(ERR16), 0);
 			}
 		}
 		else if(!strncmp(recv_msg, "adddata", 7)){
@@ -602,10 +681,79 @@ void* conn(void *arg){
 			}
 			acc_num += 10;
 		}
+		else if(!strncmp(recv_msg, "remain", 6)){
+			FILE *outfp;
+			outfp = fopen("data.txt", "w");
+			fprintf(outfp, "user:\n%d\n", acc_num);
+			for(int j = 0; j < acc_num; j++){
+				fprintf(outfp, "%d %d %s %s %s\n", database[j].regis, database[j].login, database[j].name, database[j].email, database[j].password);
+			}
+
+			fprintf(outfp, "board:\n%d\n", acc_board);
+			for(int j = 1; j <= acc_board; j++){
+				fprintf(outfp, "%d %s %s\n", allboard[j].num, allboard[j].name, allboard[j].moderator);
+			}
+			fprintf(outfp, "post:\n%d\n", acc_post);
+			for(int j = 1; j <= acc_post; j++){
+				fprintf(outfp, "board_name:%s\n%d %d\nauthor:%s\ntitle:%s\ndatey:%s\ndatem:%s\ncontent:%s\n", posts[j].bname, posts[j].id, posts[j].exist, posts[j].author, posts[j].title, posts[j].datey, posts[j].datem, posts[j].content);
+			}
+			send(fd, SUC7, sizeof(SUC7), 0);
+			fclose(outfp);
+		}
+		else if(!strncmp(recv_msg, "filein", 6)){
+			FILE *infp;
+			infp = fopen("data.txt", "r");
+			if(infp == NULL){
+				send(fd, ERR17, sizeof(ERR17), 0);
+			}
+			else{
+				char tmp_buf[1024];
+				char tmp_num[10];
+				fgets(tmp_buf, 1024, infp);
+				fgets(tmp_num, 10, infp);
+				int real_num = atoi(tmp_num);
+				int i = 0;
+				char *delim = " ";
+				char *pch;
+				for(int i = 0; i < real_num; i++){
+					acc_num ++;
+					fgets(tmp_buf, 1024, infp);
+					pch = strtok(tmp_buf, delim);
+					for(int j = 0; j < 5; j++){
+						switch(j){
+							case 0:	
+								database[i].regis = atoi(pch);
+								break;
+							case 1: 
+								database[i].login = atoi(pch);
+								break;
+							case 2: 
+								strcpy(database[i].name, pch);
+								break;
+							case 3: 
+								strcpy(database[i].email, pch);
+								break;
+							case 4:{
+								       strncpy(database[i].password, pch, strlen(pch)-1);
+								       break;
+							       }
+						}
+						pch = strtok(NULL, delim);
+					}	
+					//printf("%s\n", pch);
+					//pch = strtok(NULL, delim);
+				}
+		
+
+			}
+			send(fd, "File in success.\n", 20, 0);
+			fclose(infp);
+		}
 		else{
 			//signal(SIGPIPE,SIG_IGN);
 			send(fd, ERR7, sizeof(ERR7), 0);
 		}
+
 	}
 	}
 }
