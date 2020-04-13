@@ -63,3 +63,5 @@
 之後開啟另一台terminal
 
 `./npdemo.sh localhost 1234`
+
+[https://github.com/tim310579/NP/blob/master/NP_hw1/tmp.png?raw=true
