@@ -41,3 +41,23 @@
 ` logout`
 
 ` exit`
+
+
+#### 新增測試的方法
+
+要先安裝tmux
+
+`sudo apt install tmux`
+
+再給npdemo.sh權限
+
+`chmod 700 npdemo.hsh`
+
+然後開啟server
+
+`make`
+`./server 1234` 
+
+之後開啟另一台terminal
+
+`./npdemo.sh localhost 1234`
