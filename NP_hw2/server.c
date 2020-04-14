@@ -49,12 +49,27 @@
 
 void* conn(void *arg);
 
-void fix_lines(char fixed[]){
+void fix_file_lines(char fixed[]){
 	char temp[1000] = "";
         int flag = 0;
         for(int l = 0; l < 1000; l++){
                 if(fixed[l] == '\n'){
                         strncpy(temp, fixed, l);
+                        flag = 1;
+                        break;
+                }
+        }
+
+        if(flag == 0) strcpy(temp, fixed);
+        strcpy(fixed, temp);
+}
+
+void fix_lines(char fixed[]){
+	char temp[1000] = "";
+        int flag = 0;
+        for(int l = 0; l < 1000; l++){
+                if(fixed[l] == '\n'){
+                        strncpy(temp, fixed, l-1);
                         flag = 1;
                         break;
                 }
@@ -593,16 +608,16 @@ void* conn(void *arg){
 						send(fd, ERR9, sizeof(ERR9), 0);
 					}
 					else{
-						char send0[100] = "";
+						char send0[80] = "";
 						sprintf(send0, "    Id               Title            Author           Date\n");
-						send(fd, send0, sizeof(send0), 0);
-						for(int l = 0; l <= acc_post; l++){
-							char send_msg[4000] = "";
+						send(fd, send0, strlen(send0), 0);
+						for(int l = 1; l <= acc_post; l++){
+							char send_msg[1500] = "";
 							//printf("%s||%s||\n", board_name, posts[l].bname);
 							if(!strcmp(board_name, posts[l].bname) && strstr(posts[l].title, real_key) != NULL && posts[l].exist > 0){	//bname is right && key matched && existed
 
 								sprintf(send_msg, "    %-17d%-17s%-17s%-17s\n", posts[l].id, posts[l].title, posts[l].author, posts[l].datem);
-								send(fd, send_msg, sizeof(send_msg), 0);
+								send(fd, send_msg, strlen(send_msg), 0);
 							}
 						}
 					}
@@ -621,16 +636,16 @@ void* conn(void *arg){
                                                 send(fd, ERR9, sizeof(ERR9), 0);
                                         }
                                         else{
-						char send0[100] = "";
+						char send0[80] = "";
 						sprintf(send0, "    Id               Title            Author           Date\n");
-						send(fd, send0, sizeof(send0), 0);
-						for(int l = 0; l <= acc_post; l++){
-							char send_msg[4000] = "";
+						send(fd, send0, strlen(send0), 0);
+						for(int l = 1; l <= acc_post; l++){
+							char send_msg[1500] = "";
 							//printf("%s||%s||\n", board_name, posts[l].bname);
 							if(!strcmp(board_name, posts[l].bname) && posts[l].exist > 0){
 
 								sprintf(send_msg, "    %-17d%-17s%-17s%-17s\n", posts[l].id, posts[l].title, posts[l].author, posts[l].datem);
-								send(fd, send_msg, sizeof(send_msg), 0);
+								send(fd, send_msg, strlen(send_msg), 0);
 							}
 						}
                                         }
@@ -648,7 +663,8 @@ void* conn(void *arg){
 				strcpy(tmp_id, recv_msg + 5);
 				fix_endline(tmp_id);
 				int real_id = atoi(tmp_id);
-				if(posts[real_id].exist == 0){	//not exist
+				if(real_id > acc_post) send(fd, ERR13, sizeof(ERR13), 0);	//not exist
+				else if(posts[real_id].exist == 0){	//not exist
 					send(fd, ERR13, sizeof(ERR13), 0);
 				}
 				else{
@@ -682,6 +698,7 @@ void* conn(void *arg){
 				if(login_yn == 0){	//login first
 					send(fd, ERR6, sizeof(ERR6), 0);
 				}
+				else if(real_id > acc_post) send(fd, ERR13, sizeof(ERR13), 0);       //not exist
 				else if(posts[real_id].exist == 0){  //not exist
                                         send(fd, ERR13, sizeof(ERR13), 0);
                                 }
@@ -715,7 +732,8 @@ void* conn(void *arg){
 						char real_id[10];
 						substr(real_id, tmp_id, 0, len-1);
 						int true_id = atoi(real_id);
-						if(posts[true_id].exist == 0){
+						if(true_id > acc_post) send(fd, ERR13, sizeof(ERR13), 0);       //not exist
+						else if(posts[true_id].exist == 0){
 							send(fd, ERR13, sizeof(ERR13), 0);
 						}
 						else{
@@ -737,7 +755,8 @@ void* conn(void *arg){
                                                 char real_id[10];
                                                 substr(real_id, tmp_id, 0, len-1);
                                                 int true_id = atoi(real_id);
-                                                if(posts[true_id].exist == 0){
+						if(true_id > acc_post) send(fd, ERR13, sizeof(ERR13), 0);       //not exist
+						else if(posts[true_id].exist == 0){
                                                         send(fd, ERR13, sizeof(ERR13), 0);
                                                 }
                                                 else{
@@ -773,12 +792,13 @@ void* conn(void *arg){
 					pch = strtok(NULL, delim);
 					//printf("%s\n", pch);
 					int real_id = atoi(pch);
-					if(posts[real_id].exist == 0){	//not exist
+					if(real_id > acc_post) send(fd, ERR13, sizeof(ERR13), 0);       //not exist
+					else if(posts[real_id].exist == 0){	//not exist
 						send(fd, ERR13, sizeof(ERR13), 0);
 					}
 					else{
 						char pch0[100];
-						int len = strlen(pch) + 8 + 2;
+						int len = strlen(pch) + 7 + 2;
 						strcpy(pch0, recv_msg + len);
 						fix_content(pch0);
 						char tmp_comment[100];
@@ -793,6 +813,21 @@ void* conn(void *arg){
 			}
 			else{
 				send(fd, ERR19, sizeof(ERR19), 0);
+			}
+		}
+		else if(!strncmp(recv_msg, "list-all-post", 13)){
+			char send0[100] = "";
+			sprintf(send0, "    Id               Exist            Title            Author           Date\n");
+			send(fd, send0, strlen(send0), 0);
+			for(int l = 1; l <= acc_post; l++){
+				char send_msg[4000] = "";
+				//printf("%s||%s||\n", board_name, posts[l].bname);
+				if(1 > 0){
+
+					//printf("%d %s %s %s\n", posts[l].id, posts[l].title, posts[l].author, posts[l].datem);
+					sprintf(send_msg, "    %-17d%-17d%-17s%-17s%-17s\n", posts[l].id, posts[l].exist, posts[l].title, posts[l].author, posts[l].datem);
+					send(fd, send_msg, sizeof(send_msg), 0);
+				}
 			}
 		}
 		else if(!strncmp(recv_msg, "adddata", 7)){
@@ -908,37 +943,37 @@ void* conn(void *arg){
 				for(int i = 1; i <= real_num; i++){
 					acc_post ++;
 					fgets(tmp_buf, 1024, infp);	//board name
-					fix_lines(tmp_buf);
+					fix_file_lines(tmp_buf);
 					strcpy(posts[i].bname, tmp_buf);
 				
 					fgets(tmp_buf, 1024, infp);	//id
-                                        fix_lines(tmp_buf);
+                                        fix_file_lines(tmp_buf);
                                         posts[i].id = atoi(tmp_buf);
 
 					fgets(tmp_buf, 1024, infp);	//existed
-                                        fix_lines(tmp_buf);
+                                        fix_file_lines(tmp_buf);
                                         posts[i].exist = atoi(tmp_buf);
 
 				//printf("here%s\n", tmp_buf);
 
 					fgets(tmp_buf, 1024, infp);     //author
-                                        fix_lines(tmp_buf);
+                                        fix_file_lines(tmp_buf);
                                         strcpy(posts[i].author, tmp_buf);
 
 				//printf("here%s\n", tmp_buf);
 
 					fgets(tmp_buf, 1024, infp);     //title
-                                        fix_lines(tmp_buf);
+                                        fix_file_lines(tmp_buf);
                                         strcpy(posts[i].title, tmp_buf);
 
 				//printf("here%s\n", tmp_buf);
 					fgets(tmp_buf, 1024, infp);     //datey
-                                        fix_lines(tmp_buf);
+                                        fix_file_lines(tmp_buf);
                                         strcpy(posts[i].datey, tmp_buf);
 				//printf("here%s\n", tmp_buf);
 
 					fgets(tmp_buf, 1024, infp);     //datem
-                                        fix_lines(tmp_buf);
+                                        fix_file_lines(tmp_buf);
                                         strcpy(posts[i].datem, tmp_buf);
 					
 				//printf("here%s\n", tmp_buf);
@@ -950,7 +985,7 @@ void* conn(void *arg){
 					}
 
 					fgets(tmp_buf, 1024, infp);     //comment_cnt
-                                        fix_lines(tmp_buf);
+                                        fix_file_lines(tmp_buf);
 					int comment_cnt = atoi(tmp_buf);
 					posts[i].comment_cnt = comment_cnt;
 					for(int k = 1; k <= comment_cnt; k++){
