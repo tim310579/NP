@@ -136,9 +136,15 @@ do
 	#Post is not exist. 
 	sleep $SLEEP_TIME
 	let "index=i*2+1"
+	tmux send-keys -t ${i} "whoami" Enter
+	sleep $SLEEP_TIME
 	tmux send-keys -t ${i} "update-post ${index} --title NP HW_2" Enter
 	#Update successfully. 
 	sleep $SLEEP_TIME
+	tmux send-keys -t ${i} "update-post 2 --title HA HA HA I change it" Enter
+	
+	sleep $SLEEP_TIME
+
 	tmux send-keys -t ${i} "list-all-post" Enter
 	sleep $SLEEP_TIME
 	tmux send-keys -t ${i} "read ${index}" Enter
@@ -158,11 +164,10 @@ do
 	#Bye, Bob.
 	sleep $SLEEP_TIME
 	tmux send-keys -t ${index} "login user${i} user${i}" Enter
-	#Welcome, Sam.
 	sleep $SLEEP_TIME
-
-	tmux send-keys -t ${index} "update-post ${index2} --content Ha!<br>ha!<br>ha!" Enter
-	
+	tmux send-keys -t ${index} "whoami" Enter
+	sleep $SLEEP_TIME
+	tmux send-keys -t ${index} "update-post ${index2} --content Ha!<br>ha!<br>ha!" Enter	
 	sleep $SLEEP_TIME
 	
 	tmux send-keys -t ${index} "comment 888 Ha! ha! ha!" Enter
@@ -180,9 +185,14 @@ do
 	tmux send-keys -t ${index} "read ${index3}" Enter
 	sleep $SLEEP_TIME
 	
+	tmux send-keys -t ${index} "whoami" Enter
+	sleep $SLEEP_TIME
+
 	tmux send-keys -t ${index} "delete-post ${index2}" Enter
 	sleep $SLEEP_TIME
 	tmux send-keys -t ${index} "delete-post ${index3}" Enter
+	sleep $SLEEP_TIME
+	tmux send-keys -t ${index} "delete-post 8" Enter
 	sleep $SLEEP_TIME
 	tmux send-keys -t ${index} "list-all-post" Enter
 	sleep $SLEEP_TIME
