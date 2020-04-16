@@ -141,10 +141,12 @@ do
 	tmux send-keys -t ${i} "update-post ${index} --title NP HW_2" Enter
 	#Update successfully. 
 	sleep $SLEEP_TIME
-	tmux send-keys -t ${i} "update-post 2 --title HA HA HA I change it" Enter
-	
+	tmux send-keys -t ${i} "read ${index}" Enter
 	sleep $SLEEP_TIME
 
+	let "index=(i*2+3)%8"
+	tmux send-keys -t ${i} "update-post ${index} --title HA HA HA I change it" Enter
+	sleep $SLEEP_TIME
 	tmux send-keys -t ${i} "list-all-post" Enter
 	sleep $SLEEP_TIME
 	tmux send-keys -t ${i} "read ${index}" Enter
@@ -157,7 +159,7 @@ index2=0
 index3=0
 for i in $(seq 0 3)
 do
-	let "index=3-i"
+	let "index=(i+1)%4"
 	let "index2=i*2+1"
 	let "index3=index*2+1"
 	tmux send-keys -t ${index} "logout" Enter
