@@ -18,6 +18,18 @@
 
 `comment <post-id> <comment>`
 
-### 另外有寫一個測試檔，和之前用一樣的方法即可測試
+### 新增store和load資料功能
+
+在client端輸入
+
+`store`
+
+`load`
+
+store可以將資料寫到data.txt裡面，以防資料遺失
+
+load則將該資料取出，放到server裡面
+
+### 測試檔和之前用一樣的方法即可測試
 
 `test.sh [ip] [port]`
