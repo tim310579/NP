@@ -17,3 +17,7 @@
 `update-post <post-id> --title/content <new>`
 
 `comment <post-id> <comment>`
+
+## 另外有寫一個測試檔，和之前用一樣的方法即可測試
+
+`test.sh [ip] [port]`
