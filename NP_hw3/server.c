@@ -433,7 +433,7 @@ void* conn(void *arg){
 								char suc[100] = "Welcome, ";
 								strcat(suc, tmp1);
 								strcat(suc, ".\n");
-								send(fd, suc, sizeof(suc), 0);
+								send(fd, suc, strlen(suc), 0);
 								database[j].login = 1;
 								login_yn = 1;
 								strcpy(login_name, tmp1);
@@ -591,6 +591,7 @@ void* conn(void *arg){
 							strcpy(posts[acc_post].title, titlename);
 							strcpy(posts[acc_post].author, login_name);
 							fix_content(real_content);
+							if(real_content[strlen(real_content)-1] != '\n') strcat(real_content, "\n");
 							strcpy(posts[acc_post].content, real_content);
 							time_t p;
 							struct tm *tp;
@@ -604,7 +605,7 @@ void* conn(void *arg){
 							strcpy(posts[acc_post].datem, temp_time);
 
 
-							send(fd, SUC5, sizeof(SUC5), 0);
+							send(fd, SUC5, strlen(SUC5), 0);
 						}
 					}
 				}
@@ -712,7 +713,7 @@ void* conn(void *arg){
 					//send(fd, send_date, strlen(send_date), 0);
 					//send(fd, send_content, strlen(send_content), 0);
 					for(int k = 1; k <= posts[real_id].comment_cnt; k++){
-						sprintf(send_comment, "     %s\n", posts[real_id].comments[k]);
+						sprintf(send_comment, "     %s", posts[real_id].comments[k]);
 						strcat(send0, send_comment);
 						//send(fd, send_comment, strlen(send_comment), 0);
 					}
@@ -840,6 +841,11 @@ void* conn(void *arg){
 						strcpy(tmp_comment, login_name);
 						strcat(tmp_comment, ": ");
 						strcat(tmp_comment, pch0);
+						if(tmp_comment[strlen(tmp_comment)-1] != '\n'){
+							//printf("do sthhahaha\n");
+							strcat(tmp_comment, "\n");
+						}
+						//else printf("www...\n");
 						posts[real_id].comment_cnt ++;
 						posts[real_id].comments[posts[real_id].comment_cnt] = strdup(tmp_comment);
 						send(fd, SUC10, sizeof(SUC10), 0);
@@ -851,19 +857,21 @@ void* conn(void *arg){
 			}
 		}
 		else if(!strncmp(recv_msg, "list-all-post", 13)){
-			char send0[100] = "";
-			sprintf(send0, "    Id               Exist            Title            Author           Date\n");
-			send(fd, send0, strlen(send0), 0);
+			char send0[4096] = "";
+			sprintf(send0, "    Id             Exist          Board          Title          Author         Date\n");
+			//send(fd, send0, strlen(send0), 0);
 			for(int l = 1; l <= acc_post; l++){
 				char send_msg[4000] = "";
 				//printf("%s||%s||\n", board_name, posts[l].bname);
 				if(1 > 0){
 
 					//printf("%d %s %s %s\n", posts[l].id, posts[l].title, posts[l].author, posts[l].datem);
-					sprintf(send_msg, "    %-17d%-17d%-17s%-17s%-17s\n", posts[l].id, posts[l].exist, posts[l].title, posts[l].author, posts[l].datem);
-					send(fd, send_msg, sizeof(send_msg), 0);
+					sprintf(send_msg, "    %-15d%-15d%-15s%-15s%-15s%-15s\n", posts[l].id, posts[l].exist, posts[l].bname, posts[l].title, posts[l].author, posts[l].datem);
+					strcat(send0, send_msg);
+					//send(fd, send_msg, sizeof(send_msg), 0);
 				}
 			}
+			send(fd, send0, strlen(send0), 0);
 		}
 		else if(!strncmp(recv_msg, "adddata", 7)){
 			
