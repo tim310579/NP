@@ -18,6 +18,7 @@ print(recv.decode(), end = '')
 
 s3 = boto3.resource('s3')
 login_bucket = s3.Bucket('')
+target_bucket = s3.Bucket('')
 post_acc = 1
 login_name = ''
 
@@ -49,18 +50,32 @@ while True:
             login_bucket = s3.Bucket(prefix + command[1].lower())
             login_name = command[1]
             #login_bucket.upload_file('./hello.txt', 'hello.txt')
-        elif recv == "Create post successfully.\n":
+        elif recv[0:26] == "Create post successfully.\n":
             #print("here now")
             tmp = msg.find('--content')
             the_content = msg[tmp+10:]
-            #print(the_content)
-            post_name = login_name + '_post'+str(post_acc)+'.txt'
+            post_id_loc = recv.find('\n')
+            post_id = recv[post_id_loc+1:]
+            post_name = login_name + '_post' + post_id + '.txt'
             fp = open(post_name, 'w')
             fp.write(the_content)
             fp.close()
             #print(post_name, the_content)
             post_acc = post_acc + 1
             login_bucket.upload_file(post_name, post_name)
+        elif command[0] == 'read' and recv != "Post does not exist.\n":
+            tmp = recv.find('read_is_over')
+            remain_data = recv[tmp:]
+            data = remain_data.split(' ')
 
+            bucket_name = prefix + data[1].lower()
+            target_bucket = s3.Bucket(bucket_name)
+            filename = data[1] + '_post'+ data[2] +'.txt'
+            print(filename)
+            target_object = target_bucket.Object(filename)
+            object_content = target_object.get()['Body'].read().decode()
+            print(object_content)
+
+            print("read success")
 client.close()
 print('Bye!!!!!!')

@@ -28,7 +28,7 @@
 #define ERR10 "Usage: create-board <name>\n"
 #define ERR11 "Usage: create-post <board-name> --title <title> --content <content>\n"
 #define ERR12 "Usage: list-post <board-name> ##<key>\n"
-#define ERR13 "Post is not exist.\n"
+#define ERR13 "Post does not exist.\n"
 #define ERR14 "Usage: read <post-id>\n"
 #define ERR15 "Not the post owner.\n"
 #define ERR16 "Usage: delete-post <post-id>\n"
@@ -137,6 +137,7 @@ struct Data{
 	int regis, login;
 	char name[100], email[100], password[100];
 	char bucketname[100];
+	int acc_post;
 };
 
 struct Board{
@@ -147,6 +148,7 @@ struct Board{
 
 struct Post{
 	int id, exist, comment_cnt;
+	int author_post_num;	//means the author's n_th post
 	char title[1024], author[100], datey[100], datem[100], bname[100], content[1024];
 	char **comments;
 };
@@ -178,12 +180,14 @@ int main(int argc, const char * argv[])
 		strcpy(database[j].email, "");
 		strcpy(database[j].password, "");
 		strcpy(database[j].bucketname, "");
+		database[j].acc_post = 0;
 	}
 	for(j = 0; j < 101; j++){
 		allboard[j].num = 0;
 		strcpy(allboard[j].name, "");
 		strcpy(allboard[j].moderator, "");
 
+		posts[j].author_post_num = 0;
 		posts[j].id = 0;
 		posts[j].exist = 0;
 		posts[j].comment_cnt = 0;
@@ -590,6 +594,13 @@ void* conn(void *arg){
 							strcpy(posts[acc_post].bname, bname);
 							strcpy(posts[acc_post].title, titlename);
 							strcpy(posts[acc_post].author, login_name);
+							for(int k = 0; k < acc_num;k++){
+								if(!strcmp(database[k].name, login_name)){
+									database[k].acc_post++;
+									posts[acc_post].author_post_num = database[k].acc_post++;
+									break;
+								}
+							}
 							fix_content(real_content);
 							if(real_content[strlen(real_content)-1] != '\n') strcat(real_content, "\n");
 							strcpy(posts[acc_post].content, real_content);
@@ -605,7 +616,14 @@ void* conn(void *arg){
 							strcpy(posts[acc_post].datem, temp_time);
 
 
-							send(fd, SUC5, strlen(SUC5), 0);
+							char send0[100], tmp_id[10];
+							strcpy(send0, SUC5);
+							sprintf(tmp_id, "%d", posts[acc_post].id);
+							strcat(send0, tmp_id);
+							send(fd, send0, strlen(send0), 0);
+							//char temp_post[10];
+							//sprintf(temp_post, "%d", posts[acc_post].id);
+							//send(fd, temp_post, strlen(temp_post), 0);
 						}
 					}
 				}
@@ -693,9 +711,9 @@ void* conn(void *arg){
 				strcpy(tmp_id, recv_msg + 5);
 				fix_endline(tmp_id);
 				int real_id = atoi(tmp_id);
-				if(real_id > acc_post) send(fd, ERR13, sizeof(ERR13), 0);	//not exist
+				if(real_id > acc_post) send(fd, ERR13, strlen(ERR13), 0);	//not exist
 				else if(posts[real_id].exist == 0){	//not exist
-					send(fd, ERR13, sizeof(ERR13), 0);
+					send(fd, ERR13, strlen(ERR13), 0);
 				}
 				else{
 					char send0[4096];
@@ -717,8 +735,12 @@ void* conn(void *arg){
 						strcat(send0, send_comment);
 						//send(fd, send_comment, strlen(send_comment), 0);
 					}
-					send(fd, send0, strlen(send0), 0);
+					//send(fd, send0, strlen(send0), 0);
+					char send2[1024];
+					sprintf(send2, "read_is_over %s %d %d", posts[real_id].author, posts[real_id].id, posts[real_id].author_post_num);
+					strcat(send0, send2);
 
+					send(fd, send0, strlen(send0), 0);
 				}
 			}
 			else{
@@ -734,14 +756,14 @@ void* conn(void *arg){
 				if(login_yn == 0){	//login first
 					send(fd, ERR6, sizeof(ERR6), 0);
 				}
-				else if(real_id > acc_post) send(fd, ERR13, sizeof(ERR13), 0);       //not exist
+				else if(real_id > acc_post) send(fd, ERR13, strlen(ERR13), 0);       //not exist
 				else if(posts[real_id].exist == 0){  //not exist
-                                        send(fd, ERR13, sizeof(ERR13), 0);
+                                        send(fd, ERR13, strlen(ERR13), 0);
                                 }
                                 else{	//exist
 					if(!strcmp(login_name, posts[real_id].author)){	//is owner
 						posts[real_id].exist = 0;
-						send(fd, SUC6, sizeof(SUC6), 0);
+						send(fd, SUC6, strlen(SUC6), 0);
 					}
 					else{	//not owner
 						send(fd, ERR15, sizeof(ERR15), 0);
@@ -768,9 +790,9 @@ void* conn(void *arg){
 						char real_id[10];
 						substr(real_id, tmp_id, 0, len-1);
 						int true_id = atoi(real_id);
-						if(true_id > acc_post) send(fd, ERR13, sizeof(ERR13), 0);       //not exist
+						if(true_id > acc_post) send(fd, ERR13, strlen(ERR13), 0);       //not exist
 						else if(posts[true_id].exist == 0){
-							send(fd, ERR13, sizeof(ERR13), 0);
+							send(fd, ERR13, strlen(ERR13), 0);
 						}
 						else{
 							if(!strcmp(posts[true_id].author, login_name)){
@@ -828,9 +850,9 @@ void* conn(void *arg){
 					pch = strtok(NULL, delim);
 					//printf("%s\n", pch);
 					int real_id = atoi(pch);
-					if(real_id > acc_post) send(fd, ERR13, sizeof(ERR13), 0);       //not exist
+					if(real_id > acc_post) send(fd, ERR13, strlen(ERR13), 0);       //not exist
 					else if(posts[real_id].exist == 0){	//not exist
-						send(fd, ERR13, sizeof(ERR13), 0);
+						send(fd, ERR13, strlen(ERR13), 0);
 					}
 					else{
 						char pch0[100];
