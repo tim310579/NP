@@ -300,7 +300,8 @@ void* conn(void *arg){
                                 printf("%d  %d  %s  %s  %s||\n", database[k].regis, database[k].login, database[k].name, database[k].email, database[k].password);
                         }
 			printf("------------------------------------------------------------\n");
-                }
+                send(fd, "see\n", 4, 0);
+		}
 		else if(!strncmp(recv_msg, "register", 8)){
 			//printf("begin %s\n", recv_msg);
 			char *delim = " ";
@@ -521,26 +522,30 @@ void* conn(void *arg){
 			char search[100];
 			strncpy(search, recv_msg + 13, 100);
 			fix_endline(search);
-			char send0[100] = "";
+			char send0[4096] = "";
 			sprintf(send0, "    Index      Name       Moderator\n");
-			send(fd, send0, sizeof(send0), 0);
+			//send(fd, send0, sizeof(send0), 0);
 			for(int l = 1; l <= acc_board; l++){
 				char send_msg[1024] = "";
 				if(strstr(allboard[l].name, search) != NULL || strstr(allboard[l].moderator, search) != NULL){
 					sprintf(send_msg, "    %-11d%-11s%-11s\n", allboard[l].num, allboard[l].name, allboard[l].moderator);
-					send(fd, send_msg, sizeof(send_msg), 0);
+					strcat(send0, send_msg);
+					//send(fd, send_msg, sizeof(send_msg), 0);
 				}
 			}
+			send(fd, send0, strlen(send0), 0);
 		}
 		else if(!strncmp(recv_msg, "list-board", 10)){
-			char send0[100] = "";
+			char send0[4096] = "";
 			sprintf(send0, "    Index      Name       Moderator\n");
-                        send(fd, send0, sizeof(send0), 0);
+                        //send(fd, send0, sizeof(send0), 0);
 			for(int l = 1; l <= acc_board; l++){
 				char send_msg[1024] = "";
 				sprintf(send_msg, "    %-11d%-11s%-11s\n", allboard[l].num, allboard[l].name, allboard[l].moderator);
-				send(fd, send_msg, sizeof(send_msg), 0);
+				strcat(send0, send_msg);
+				//send(fd, send_msg, sizeof(send_msg), 0);
 			}
+			send(fd, send0, strlen(send0), 0);
 		}
 		else if(!strncmp(recv_msg, "create-post", 11)){
 			if(login_yn == 0){
@@ -628,18 +633,20 @@ void* conn(void *arg){
 						send(fd, ERR9, sizeof(ERR9), 0);
 					}
 					else{
-						char send0[80] = "";
+						char send0[4096] = "";
 						sprintf(send0, "    Id               Title            Author           Date\n");
-						send(fd, send0, strlen(send0), 0);
+						//send(fd, send0, strlen(send0), 0);
 						for(int l = 1; l <= acc_post; l++){
 							char send_msg[1500] = "";
 							//printf("%s||%s||\n", board_name, posts[l].bname);
 							if(!strcmp(board_name, posts[l].bname) && strstr(posts[l].title, real_key) != NULL && posts[l].exist > 0){	//bname is right && key matched && existed
 
 								sprintf(send_msg, "    %-17d%-17s%-17s%-17s\n", posts[l].id, posts[l].title, posts[l].author, posts[l].datem);
-								send(fd, send_msg, strlen(send_msg), 0);
+								strcat(send0, send_msg);
+								//send(fd, send_msg, strlen(send_msg), 0);
 							}
 						}
+						send(fd, send0, strlen(send0), 0);
 					}
 				}
 				else{
@@ -656,25 +663,27 @@ void* conn(void *arg){
                                                 send(fd, ERR9, sizeof(ERR9), 0);
                                         }
                                         else{
-						char send0[80] = "";
+						char send0[4096] = "";
 						sprintf(send0, "    Id               Title            Author           Date\n");
-						send(fd, send0, strlen(send0), 0);
+						//send(fd, send0, strlen(send0), 0);
 						for(int l = 1; l <= acc_post; l++){
 							char send_msg[1500] = "";
 							//printf("%s||%s||\n", board_name, posts[l].bname);
 							if(!strcmp(board_name, posts[l].bname) && posts[l].exist > 0){
 
 								sprintf(send_msg, "    %-17d%-17s%-17s%-17s\n", posts[l].id, posts[l].title, posts[l].author, posts[l].datem);
-								send(fd, send_msg, strlen(send_msg), 0);
+								strcat(send0, send_msg);
+								//send(fd, send_msg, strlen(send_msg), 0);
 							}
 						}
+						send(fd, send0, strlen(send0), 0);
                                         }
 
 				}			
 				
 			}
 			else{
-				send(fd, ERR12, sizeof(ERR12), 0);
+				send(fd, ERR12, strlen(ERR12), 0);
 			}
 		}
 		else if(!strncmp(recv_msg, "read", 4)){
@@ -688,25 +697,31 @@ void* conn(void *arg){
 					send(fd, ERR13, sizeof(ERR13), 0);
 				}
 				else{
+					char send0[4096];
 					char send_author[200], send_title[1040], send_date[200], send_content[1100], send_comment[120];
 					sprintf(send_author, "    Author    :%s\n", posts[real_id].author);
 					sprintf(send_title, "    Title     :%s\n", posts[real_id].title);
 					sprintf(send_date, "    Date      :%s\n", posts[real_id].datey);
 					sprintf(send_content, "    --\n     %s    --\n", posts[real_id].content);
-					
-					send(fd, send_author, strlen(send_author), 0);
-					send(fd, send_title, strlen(send_title), 0);
-					send(fd, send_date, strlen(send_date), 0);
-					send(fd, send_content, strlen(send_content), 0);
+					strcpy(send0, send_author);
+					strcat(send0, send_title);
+					strcat(send0, send_date);
+					strcat(send0, send_content);
+					//send(fd, send_author, strlen(send_author), 0);
+					//send(fd, send_title, strlen(send_title), 0);
+					//send(fd, send_date, strlen(send_date), 0);
+					//send(fd, send_content, strlen(send_content), 0);
 					for(int k = 1; k <= posts[real_id].comment_cnt; k++){
-						sprintf(send_comment, "     %s", posts[real_id].comments[k]);
-						send(fd, send_comment, strlen(send_comment), 0);
+						sprintf(send_comment, "     %s\n", posts[real_id].comments[k]);
+						strcat(send0, send_comment);
+						//send(fd, send_comment, strlen(send_comment), 0);
 					}
+					send(fd, send0, strlen(send0), 0);
 
 				}
 			}
 			else{
-				send(fd, ERR14, sizeof(ERR14), 0);
+				send(fd, ERR14, strlen(ERR14), 0);
 			}
 		}
 		else if(!strncmp(recv_msg, "delete-post", 11)){

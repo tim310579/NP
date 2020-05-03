@@ -18,14 +18,14 @@ print(recv.decode(), end = '')
 
 s3 = boto3.resource('s3')
 while True:
-    
-    msg = input('% ')
+    print('% ', end = '')
+    msg = input()
     if msg == '':
         client.send("nothing to do".encode())
         
     else:
         client.send(msg.encode())
-        recv = client.recv(1024)
+        recv = client.recv(4096)
         recv = recv.decode()
         if recv == 'close':
             break

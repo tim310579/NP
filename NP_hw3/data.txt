@@ -1,6 +1,6 @@
 user:
 10
-1 0 user0 user0@qwer.zxcv user0
+1 1 user0 user0@qwer.zxcv user0
 1 0 user1 user1@qwer.zxcv user1
 1 0 user2 user2@qwer.zxcv user2
 1 0 user3 user3@qwer.zxcv user3
