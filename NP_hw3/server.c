@@ -721,7 +721,8 @@ void* conn(void *arg){
 					sprintf(send_author, "    Author    :%s\n", posts[real_id].author);
 					sprintf(send_title, "    Title     :%s\n", posts[real_id].title);
 					sprintf(send_date, "    Date      :%s\n", posts[real_id].datey);
-					sprintf(send_content, "    --\n     %s    --\n", posts[real_id].content);
+					//sprintf(send_content, "    --\n     %s    --\n", posts[real_id].content);
+					sprintf(send_content, "--------------------\n");
 					strcpy(send0, send_author);
 					strcat(send0, send_title);
 					strcat(send0, send_date);
