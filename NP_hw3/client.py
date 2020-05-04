@@ -100,7 +100,7 @@ while True:
             target_object = login_bucket.Object(filename)
             target_object.delete()
         
-        elif command[0] == 'update-post' and msg.find('--content') and recv == 'Update successfully.\n':
+        elif command[0] == 'update-post' and msg.find('--content') > 0 and recv == 'Update successfully.\n':
             #update success
             print(recv, end = '')
             tmp = msg.find('--content')
