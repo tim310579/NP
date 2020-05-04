@@ -3,7 +3,7 @@
 SERVER_IP=$1
 SERVER_PORT=$2
 SESSION="test"
-SLEEP_TIME=0.5
+SLEEP_TIME=1.5
 if [ -z ${SERVER_IP} ] || [ -z ${SERVER_PORT} ]; then
     echo "Usage: $0 <server ip> <server port>"
     exit 1
@@ -21,7 +21,7 @@ tmux select-pane -t 0
 
 echo "Connection..."
 tmux send-keys "python3 client.py ${SERVER_IP} ${SERVER_PORT}" Enter
-sleep 0.5
+sleep $SLEEP_TIME
 
 tmux send-keys "register Brad bb@cs.nctu.edu.tw 12345" Enter
 sleep $SLEEP_TIME
@@ -117,6 +117,67 @@ tmux send-keys "comment 1 Ha ha!" Enter
 sleep $SLEEP_TIME
 
 tmux send-keys "read 1" Enter
+sleep $SLEEP_TIME
+
+tmux send-keys "mail-to TT --subject Hi TT --content Hi <br> TT!" Enter
+sleep $SLEEP_TIME
+
+tmux send-keys "mail-to Brad --subject Hi Brad --content Hi <br> Brad! " Enter
+sleep $SLEEP_TIME
+
+tmux send-keys "mail-to Brad --subject Hey --content Hey <br>Brad!" Enter
+sleep $SLEEP_TIME
+
+tmux send-keys "list-mail" Enter
+sleep $SLEEP_TIME
+
+tmux send-keys "delete-mail 1" Enter
+sleep $SLEEP_TIME
+
+tmux send-keys "retr-mail 1" Enter
+sleep $SLEEP_TIME
+
+tmux send-keys "logout" Enter
+sleep $SLEEP_TIME
+
+tmux send-keys "login Brad 12345" Enter
+sleep $SLEEP_TIME
+
+tmux send-keys "list-mail" Enter
+sleep $SLEEP_TIME
+
+tmux send-keys "retr-mail 1" Enter
+sleep $SLEEP_TIME
+
+tmux send-keys "mail-to V --subject Hi V --content WoW V!" Enter
+sleep $SLEEP_TIME
+
+tmux send-keys "logout" Enter
+sleep $SLEEP_TIME
+
+tmux send-keys "login V bt21" Enter
+sleep $SLEEP_TIME
+
+tmux send-keys "list-mail" Enter
+sleep $SLEEP_TIME
+
+tmux send-keys "logout" Enter
+sleep $SLEEP_TIME
+
+
+tmux send-keys "login Brad 12345 " Enter
+sleep $SLEEP_TIME
+
+tmux send-keys "list-mail" Enter
+sleep $SLEEP_TIME
+
+tmux send-keys "delete-mail 1" Enter
+sleep $SLEEP_TIME
+
+tmux send-keys "list-mail" Enter
+sleep $SLEEP_TIME
+
+tmux send-keys "logout" Enter
 sleep $SLEEP_TIME
 
 tmux send-keys "exit" Enter

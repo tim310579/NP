@@ -23,8 +23,8 @@
 #define ERR5 "Please logout first.\n"
 #define ERR6 "Please login first.\n"
 #define ERR7 "Wrong Command.\n"
-#define ERR8 "Board is already exist.\n"
-#define ERR9 "Board is not exist.\n"
+#define ERR8 "Board already exist.\n"
+#define ERR9 "Board does not exist.\n"
 #define ERR10 "Usage: create-board <name>\n"
 #define ERR11 "Usage: create-post <board-name> --title <title> --content <content>\n"
 #define ERR12 "Usage: list-post <board-name> ##<key>\n"
@@ -1197,13 +1197,16 @@ void* conn(void *arg){
 			}
 			else{
 				char send0[4096];
-				sprintf(send0, "ID\tSubject\tFrom\tDate\n");
+				sprintf(send0, "\tID\tSubject\tFrom\tDate\n");
 				for(int k = 0; k < acc_num; k++){
 					if(!strcmp(login_name, database[k].name)){
+						int cnt = 0;
 						for(int l = 1; l <= database[k].acc_mail; l++){
 							char tmp_char[4096];
 							if(database[k].mails[l].exist > 0){	//exist mail
-								sprintf(tmp_char, "%d\t%s\t%s\t%s\n", database[k].mails[l].id, database[k].mails[l].subject, database[k].mails[l].from, database[k].mails[l].date);
+								cnt ++;
+								sprintf(tmp_char, "\t%d\t%s\t%s\t%s\n", cnt/*database[k].mails[l].id*/, database[k].mails[l].subject, database[k].mails[l].from, database[k].mails[l].date);
+								database[k].mails[l].id = cnt;
 								strcat(send0, tmp_char);
 							}
 						}
