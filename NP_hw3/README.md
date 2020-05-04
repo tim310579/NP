@@ -32,4 +32,6 @@ e.g.
 
 `./tesh.sh localhost 1234`
 
-#### server是用C寫的，但client因為會用到s3的bucket相關指令，所以用python寫比較方便XD
+---------------------------------------------
+
+#### ~~server是用C寫的，但client因為會用到s3的bucket相關指令，所以用python寫比較方便XD~~
