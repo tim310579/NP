@@ -7,7 +7,9 @@ def fix_content(content):
     content = '     ' + content
     content = content.replace('<br>', '\n     ')
     return content
-
+def fix_comment(comment):
+    comment = comment.replace('<br>', '\n         ')
+    return comment
 prefix = '0616027hw3-16567629137-10923492449-'
 cli, ip, port = argv
 
@@ -110,8 +112,25 @@ while True:
             fp.close()
             login_bucket.upload_file(filename, filename)
         
-        elif command[0] == 'comment' and recv[0:21] == 'Comment successfully.\n':
-            print("OKOK")
+        elif command[0] == 'comment' and recv[0:22] == 'Comment successfully.\n':
+            print('Comment successfully.\n', end = '')
+            the_comment = msg[8:]
+            tmp = the_comment.find(' ')
+            the_comment = the_comment[tmp+1:]
+            the_comment = fix_comment(the_comment)
+
+            remain_data = recv.split('\n')
+            author_data = remain_data[1].split(' ') #au[0]->name, au[1]->id
+            bucket_name = prefix + author_data[0].lower()
+            the_comment = '     ' + author_data[0] + ': ' + the_comment + '\n'
+
+            target_bucket = s3.Bucket(bucket_name)
+            filename = author_data[0] + '_post' + author_data[1] + '.txt'
+            fp = open(filename, 'a')
+            fp.write(the_comment)
+            fp.close()
+            target_bucket.upload_file(filename, filename)
+
         else:
             print(recv, end = '')
 client.close()

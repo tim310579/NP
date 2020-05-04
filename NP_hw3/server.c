@@ -877,7 +877,11 @@ void* conn(void *arg){
 						//else printf("www...\n");
 						posts[real_id].comment_cnt ++;
 						posts[real_id].comments[posts[real_id].comment_cnt] = strdup(tmp_comment);
-						send(fd, SUC10, sizeof(SUC10), 0);
+						char send0[1024], tmp[200];
+						sprintf(tmp, "%s %d", posts[real_id].author, real_id);
+						strcpy(send0, SUC10);
+						strcat(send0, tmp);
+						send(fd, send0, strlen(send0), 0);
 					}
 				}	
 			}
