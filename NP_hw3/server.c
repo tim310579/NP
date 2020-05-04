@@ -140,7 +140,7 @@ typedef struct Board Borad;
 typedef struct Post Post;
 
 struct Mail{
-	int id, exist;
+	int id, exist, unique_id;
 	char from[100], subject[1024], content[1024], date[10];
 };
 
@@ -196,6 +196,7 @@ int main(int argc, const char * argv[])
 		for(int k = 0; k < 101; k ++){
 			database[j].mails[k].id = k;
 			database[j].mails[k].exist = 0;
+			database[j].mails[k].unique_id = k;
 			strcpy(database[j].mails[k].from, "");
 			strcpy(database[j].mails[k].subject, "");
 			strcpy(database[j].mails[k].content, "");
@@ -1162,7 +1163,7 @@ void* conn(void *arg){
 						if(!strcmp(r_name, database[k].name)){	//find!!
 							exist = 1;									database[k].acc_mail++;
 							int mail_id = database[k].acc_mail;
-							the_mail_id = mail_id;
+							the_mail_id = database[k].mails[mail_id].unique_id;
 							database[k].mails[mail_id].exist = 1;
 							strcpy(database[k].mails[mail_id].from, login_name);
 							strcpy(database[k].mails[mail_id].subject, real_subject);
@@ -1205,8 +1206,8 @@ void* conn(void *arg){
 							char tmp_char[4096];
 							if(database[k].mails[l].exist > 0){	//exist mail
 								cnt ++;
-								sprintf(tmp_char, "\t%d\t%s\t%s\t%s\n", cnt/*database[k].mails[l].id*/, database[k].mails[l].subject, database[k].mails[l].from, database[k].mails[l].date);
-								database[k].mails[l].id = cnt;
+								sprintf(tmp_char, "\t%d\t%s\t%s\t%s\n", database[k].mails[l].id, database[k].mails[l].subject, database[k].mails[l].from, database[k].mails[l].date);
+								//database[k].mails[l].id = cnt;
 								strcat(send0, tmp_char);
 							}
 						}
@@ -1237,13 +1238,16 @@ void* conn(void *arg){
 							send(fd, ERR22, strlen(ERR22), 0);
 						}	
 						else{
-							char send_subject[1100], send_from[1100], send_date[1100];
+							char send_subject[1100], send_from[1100], send_date[1100], send_unique_id[100];
 							sprintf(send_subject, "Subject\t: %s\n", database[k].mails[real_id].subject);
 							sprintf(send_from, "From\t: %s\n", database[k].mails[real_id].from);
 							sprintf(send_date, "Date\t: %s\n", database[k].mails[real_id].date);
+							sprintf(send_unique_id, "UNI_ID%d", database[k].mails[real_id].unique_id);
 							strcat(send0, send_subject);
 							strcat(send0, send_from);
 							strcat(send0, send_date);
+							strcat(send0, send_unique_id);
+							
 							send(fd, send0, strlen(send0), 0);
 						}
 						break;
@@ -1261,6 +1265,7 @@ void* conn(void *arg){
 				strcpy(tmp_id, recv_msg + 12);
 				fix_endline(tmp_id);
 				int real_id = atoi(tmp_id);
+				int uni_id = 0;
 				for(int k = 0; k < acc_num; k++){
 					if(!strcmp(login_name, database[k].name)){
 						if(real_id > database[k].acc_mail){
@@ -1269,14 +1274,38 @@ void* conn(void *arg){
 						else if(database[k].mails[real_id].exist == 0){
 							send(fd, ERR22, strlen(ERR22), 0);
 						}
-						else{
-							database[k].mails[real_id].exist = 0;
-							send(fd, SUC12, strlen(SUC12), 0);	
+						else{	//delete success
+							uni_id = database[k].mails[real_id].unique_id;
+							for(int l = real_id; l <= 100; l++){
+								database[k].mails[l] = database[k].mails[l+1];
+								database[k].mails[l].id = l;
+							}
+							database[k].acc_mail --;
+							
+							//database[k].mails[real_id].exist = 0;
+							char send0[1024];
+							sprintf(send0, "%s%d", SUC12, uni_id);
+							send(fd, send0, strlen(send0), 0);	
 						}
 					}
 				}
 
 			}
+		}
+		else if(!strncmp(recv_msg, "list-all-mail",13)){
+			char send0[4096];
+			char tmp_char[4096];
+			sprintf(send0, "id\texist\tunique\tsubject\tfrom\tdate\n");  
+			for(int i = 0; i < acc_num; i++){
+				if(!strcmp(login_name, database[i].name)){
+					for(int j = 0; j < 10; j++){
+						sprintf(tmp_char, "%d\t%d\t%d\t%s\t%s\t%s\n", database[i].mails[j].id, database[i].mails[j].exist, database[i].mails[j].unique_id, database[i].mails[j].subject, database[i].mails[j].from, database[i].mails[j].date);
+						strcat(send0, tmp_char);
+					}
+					break;
+				}
+			}
+			send(fd, send0, strlen(send0), 0);
 		}
 		else if(!strncmp(recv_msg, "nothing to do", 13)){
 			//send(fd, "", 0, 0);

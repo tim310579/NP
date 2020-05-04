@@ -145,14 +145,16 @@ while True:
             fp.close()
             target_bucket.upload_file(filename, filename)
         elif command[0] == 'retr-mail' and recv[0:7] == 'Subject':
-            print(recv, end = '')
-            filename = login_name + '_mail'+ command[1] +'.txt'
+            part = recv.split('UNI_ID')
+            print(part[0], end = '')
+            filename = login_name + '_mail'+ part[1] +'.txt'
             target_object = login_bucket.Object(filename)
             object_content = target_object.get()['Body'].read().decode()
             print(object_content, end = '')
-        elif command[0] == 'delete-mail' and recv == 'Mail deleted.\n':
-            print(recv, end = '')
-            filename = login_name + '_mail' + command[1] + '.txt'
+        elif command[0] == 'delete-mail' and recv[0:14] == 'Mail deleted.\n':
+            part = recv.split('\n')
+            print(part[0])
+            filename = login_name + '_mail' + part[1] + '.txt'
             target_object = login_bucket.Object(filename)
             target_object.delete()
         else:

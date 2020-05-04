@@ -38,16 +38,49 @@ sleep $SLEEP_TIME
 tmux send-keys "mail-to a1 --subject 51487 --content HAkak!!<br>hking" Enter
 sleep $SLEEP_TIME
 
+tmux send-keys "mail-to a1 --subject oqoq --content aaa" Enter
+sleep $SLEEP_TIME
+
+tmux send-keys "mail-to a1 --subject oaffafq --content aajjja" Enter
+sleep $SLEEP_TIME
+
+tmux send-keys "mail-to a1 --subject aaa --content attttt" Enter
+sleep $SLEEP_TIME
+
 tmux send-keys "logout" Enter
 sleep $SLEEP_TIME
 
 tmux send-keys "login a1 1" Enter
 sleep $SLEEP_TIME
 
+tmux send-keys "list-all-mail" Enter
+sleep $SLEEP_TIME
+
+tmux send-keys "delete-mail 2" Enter
+sleep $SLEEP_TIME
+
+tmux send-keys "list-all-mail" Enter
+sleep $SLEEP_TIME
+
+tmux send-keys "delete-mail 3" Enter
+sleep $SLEEP_TIME
+
 tmux send-keys "retr-mail 1" Enter
 sleep $SLEEP_TIME
 
 tmux send-keys "retr-mail 2" Enter
+sleep $SLEEP_TIME
+
+tmux send-keys "logout" Enter
+sleep $SLEEP_TIME
+
+tmux send-keys "login a0 0" Enter
+sleep $SLEEP_TIME
+
+tmux send-keys "mail-to a1 --subject HHHH --content AAA<br>al" Enter
+sleep $SLEEP_TIME
+
+tmux send-keys "mail-to a1 --subject oGGGGq --content PPP" Enter
 sleep $SLEEP_TIME
 
 echo "Show result"
