@@ -62,6 +62,7 @@ while True:
             tmp = msg.find('--content')
             the_content = msg[tmp+10:]
             the_content = fix_content(the_content)
+            the_content = '    --\n' + the_content + '\n    --\n'
             post_id_loc = recv.find('\n')
             post_id = recv[post_id_loc+1:]
             post_name = login_name + '_post' + post_id + '.txt'
@@ -75,8 +76,7 @@ while True:
             read_data = recv.split('--------------------\n')
             print(read_data[0], end = '')
             
-            tmp = recv.find('read_is_over')
-            remain_data = recv[tmp:]
+            remain_data = read_data[1]
             data = remain_data.split(' ')
 
             bucket_name = prefix + data[1].lower()
@@ -85,13 +85,33 @@ while True:
             
             target_object = target_bucket.Object(filename)
             object_content = target_object.get()['Body'].read().decode()
-            print('    --')
-            print(object_content)
-            print('    --')
-            loc = read_data[1].find('read_is_over')
-            comment = read_data[1]
-            if loc > 0 : print(comment[:loc-1]) #with comment
-
+            #print('    --')
+            print(object_content, end = '')
+            #print('    --')
+        elif command[0] == 'delete-post' and recv[0:21] == 'Delete successfully.\n':
+            #delete success
+            remain_data = recv.split('\n')
+            print(remain_data[0])
+            author_data = remain_data[1].split(' ')
+            filename = author_data[0] + '_post' + author_data[1] + '.txt'
+            target_object = login_bucket.Object(filename)
+            target_object.delete()
+        
+        elif command[0] == 'update-post' and command[2] == '--content' and recv == 'Update successfully.\n':
+            #update success
+            print(recv, end = '')
+            tmp = msg.find('--content')
+            the_content = msg[tmp+10:]
+            the_content = fix_content(the_content)
+            the_content = '    --\n' + the_content + '\n    --\n'
+            filename = login_name + '_post' + command[1] + '.txt'
+            fp = open(filename, 'w')
+            fp.write(the_content)
+            fp.close()
+            login_bucket.upload_file(filename, filename)
+        
+        elif command[0] == 'comment' and recv[0:21] == 'Comment successfully.\n':
+            print("OKOK")
         else:
             print(recv, end = '')
 client.close()

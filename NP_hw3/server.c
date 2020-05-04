@@ -732,8 +732,8 @@ void* conn(void *arg){
 					//send(fd, send_date, strlen(send_date), 0);
 					//send(fd, send_content, strlen(send_content), 0);
 					for(int k = 1; k <= posts[real_id].comment_cnt; k++){
-						sprintf(send_comment, "     %s", posts[real_id].comments[k]);
-						strcat(send0, send_comment);
+						//sprintf(send_comment, "     %s", posts[real_id].comments[k]);
+						//strcat(send0, send_comment);
 						//send(fd, send_comment, strlen(send_comment), 0);
 					}
 					//send(fd, send0, strlen(send0), 0);
@@ -764,7 +764,13 @@ void* conn(void *arg){
                                 else{	//exist
 					if(!strcmp(login_name, posts[real_id].author)){	//is owner
 						posts[real_id].exist = 0;
-						send(fd, SUC6, strlen(SUC6), 0);
+						char send0[1024];
+						strcpy(send0, SUC6);
+						char tmp[100];
+						sprintf(tmp, "%s %d", login_name, real_id);
+						strcat(send0, tmp);
+
+						send(fd, send0, strlen(send0), 0);
 					}
 					else{	//not owner
 						send(fd, ERR15, sizeof(ERR15), 0);
@@ -801,7 +807,7 @@ void* conn(void *arg){
                                                         	strcpy(real_title, title + 8);
 								fix_lines(real_title);
                                              	           	strcpy(posts[true_id].title, real_title);
-                                                	        send(fd, SUC9, sizeof(SUC9), 0); //is owner
+                                                	        send(fd, SUC9, strlen(SUC9), 0); //is owner
 							}
 							else{
 								send(fd, ERR15, sizeof(ERR15), 0); //not owner
@@ -824,7 +830,7 @@ void* conn(void *arg){
                                                                 strcpy(real_content, content + 10);
                                                             	fix_content(real_content);
 							    	strcpy(posts[true_id].content, real_content);
-                                                                send(fd, SUC9, sizeof(SUC9), 0); //is owner
+                                                                send(fd, SUC9, strlen(SUC9), 0); //is owner
                                                         }
                                                         else{
                                                                 send(fd, ERR15, sizeof(ERR15), 0); //not owner
