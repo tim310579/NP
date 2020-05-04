@@ -35,6 +35,9 @@
 #define ERR17 "No data now.\n"
 #define ERR18 "Usage: update-post <post-id> --title/content <new>\n"
 #define ERR19 "Usage: comment <post-id> <comment>\n"
+#define ERR20 "Usage: mail-to <username> --subject <subject> --content <content>\n" 
+#define ERR21 " does not exist.\n" 
+#define ERR22 "No such mail.\n"
 
 #define SUC0 "********************************\n** Welcome to the BBS server. **\n********************************\n"
 #define SUC1 "Register successfully.\n"
@@ -47,6 +50,7 @@
 #define SUC8 "Load data success.\n"
 #define SUC9 "Update successfully.\n"
 #define SUC10 "Comment successfully.\n"
+#define SUC11 "Sent successfully.\n"
 
 #define prefix "0616027hw3-16567629137-10923492449-"
 
@@ -129,15 +133,22 @@ void fix_content(char fixed[]){
 	strrpc(fixed, old, new);
 }
 
+typedef struct Mail Mail;
 typedef struct Data Data;
 typedef struct Board Borad;
 typedef struct Post Post;
 
+struct Mail{
+	int id, exist;
+	char from[100], subject[1024], content[1024], date[10];
+};
+
 struct Data{
+	struct Mail mails[101];
 	int regis, login;
 	char name[100], email[100], password[100];
 	char bucketname[100];
-	int acc_post;
+	int acc_post, acc_mail;
 };
 
 struct Board{
@@ -172,15 +183,23 @@ int main(int argc, const char * argv[])
 
 
 	for(j = 0; j < 100; j++){
-		//database[j] = (Data*)malloc(sizeof(Data));
+		database[j].acc_mail = 0;
 		database[j].regis = 0;
 		database[j].login = 0;
-		//database[j].name = (char*)malloc(sizeof(char)*100);
+		
 		strcpy(database[j].name, "");
 		strcpy(database[j].email, "");
 		strcpy(database[j].password, "");
 		strcpy(database[j].bucketname, "");
 		database[j].acc_post = 0;
+		for(int k = 0; k < 101; k ++){
+			database[j].mails[k].id = k;
+			database[j].mails[k].exist = 0;
+			strcpy(database[j].mails[k].from, "");
+			strcpy(database[j].mails[k].subject, "");
+			strcpy(database[j].mails[k].content, "");
+			strcpy(database[j].mails[k].date, "");
+		}
 	}
 	for(j = 0; j < 101; j++){
 		allboard[j].num = 0;
@@ -1073,15 +1092,141 @@ void* conn(void *arg){
 				}
 
 			}
-			send(fd, SUC8, sizeof(SUC8), 0);
+			send(fd, SUC8, strlen(SUC8), 0);
 			fclose(infp);
+		}
+		else if(!strncmp(recv_msg, "mail-to", 7)){
+			if(login_yn == 0){
+				send(fd, ERR6, strlen(ERR6), 0);
+			}
+			else{
+				if(strstr(recv_msg, " --subject ") == NULL || strstr(recv_msg, " --content ") == NULL){
+					send(fd, ERR11, strlen(ERR20), 0);
+					//wrong format
+				}
+				else{
+					char *receiver = strdup(recv_msg + 8);
+					char *subject = strstr(recv_msg, "--subject");
+					int len = strlen(receiver) - strlen(subject);
+					char r_name[100];
+					substr(r_name, receiver, 0, len-1);
+					char subject0[1024];
+					strcpy(subject0, subject + 10);
+					char *content = strstr(recv_msg, "--content");
+					int len2 = strlen(subject0)-strlen(content);
+					char real_subject[1024];
+					substr(real_subject, subject0, 0, len2-1);
+					char real_content[1024];
+					strcpy(real_content, subject0 + 10);
+					int exist = 0;
+					int the_mail_id = 0;
+					
+					time_t p;
+					struct tm *tp;
+					time(&p);
+					tp = localtime(&p);
+					char temp_time[10];
+					sprintf(temp_time, "%02d/%02d", tp->tm_mon+1, tp->tm_mday);
+					for(int k = 0; k < acc_num; k++){
+						if(!strcmp(r_name, database[k].name)){	//find!!
+							exist = 1;									database[k].acc_mail++;
+							int mail_id = database[k].acc_mail;
+							the_mail_id = mail_id;
+							database[k].mails[mail_id].exist = 1;
+							strcpy(database[k].mails[mail_id].from, login_name);
+							strcpy(database[k].mails[mail_id].subject, real_subject);
+							strcpy(database[k].mails[mail_id].content, real_content);
+							strcpy(database[k].mails[mail_id].date, temp_time);
+							break;
+						}
+					}
+					if(exist == 0){
+						char send0[1024];
+						strcpy(send0, r_name);
+						strcat(send0, ERR21);
+						send(fd, send0, strlen(send0), 0);
+					}
+					else{
+						char send0[1024];
+						strcpy(send0, SUC11);
+						char tmp[10];
+						//printf("%d\n", the_mail_id);
+						sprintf(tmp, "%d", the_mail_id);
+						strcat(send0, tmp);
+						send(fd, send0, strlen(send0), 0);
+					}
+				}
+
+			}
+
+		}
+		else if(!strncmp(recv_msg, "list-mail", 9)){
+			if(login_yn == 0){
+				send(fd, ERR6, strlen(ERR6), 0);
+			}
+			else{
+				char send0[4096];
+				sprintf(send0, "ID\tSubject\tFrom\tDate\n");
+				for(int k = 0; k < acc_num; k++){
+					if(!strcmp(login_name, database[k].name)){
+						for(int l = 1; l <= database[k].acc_mail; l++){
+							char tmp_char[4096];
+							if(database[k].mails[l].exist > 0){	//exist mail
+								sprintf(tmp_char, "%d\t%s\t%s\t%s\n", database[k].mails[l].id, database[k].mails[l].subject, database[k].mails[l].from, database[k].mails[l].date);
+								strcat(send0, tmp_char);
+							}
+						}
+						break;
+					}
+				}
+				send(fd, send0, strlen(send0), 0);
+			}
+		}
+		else if(!strncmp(recv_msg, "retr-mail", 9)){
+			if(login_yn == 0){	//login first
+				send(fd, ERR6, strlen(ERR6), 0);
+			}
+			else{
+				
+				char tmp_id[100];
+				strcpy(tmp_id, recv_msg + 10);
+				fix_endline(tmp_id);
+				int real_id = atoi(tmp_id);
+				//printf("%d\n", real_id);	
+				char send0[4096] = "";
+				for(int k = 0; k < acc_num; k++){
+					if(!strcmp(login_name, database[k].name)){
+						if(real_id > database[k].acc_mail){
+							send(fd, ERR22, strlen(ERR22), 0);
+						}
+						else if(database[k].mails[real_id].exist == 0){
+							send(fd, ERR22, strlen(ERR22), 0);
+						}	
+						else{
+							char send_subject[1100], send_from[1100], send_date[1100];
+							sprintf(send_subject, "Subject\t: %s\n", database[k].mails[real_id].subject);
+							sprintf(send_from, "From\t: %s\n", database[k].mails[real_id].from);
+							sprintf(send_date, "Date\t: %s\n", database[k].mails[real_id].date);
+							strcat(send0, send_subject);
+							strcat(send0, send_from);
+							strcat(send0, send_date);
+							send(fd, send0, strlen(send0), 0);
+						}
+						break;
+					}
+
+				}
+			}
+		}
+		else if(!strncmp(recv_msg, "delete-mail", 11)){
+			
 		}
 		else if(!strncmp(recv_msg, "nothing to do", 13)){
 			//send(fd, "", 0, 0);
 		}
 		else{
 			//signal(SIGPIPE,SIG_IGN);
-			send(fd, ERR7, sizeof(ERR7), 0);
+			send(fd, ERR7, strlen(ERR7), 0);
 		}
 
 	}

@@ -6,6 +6,7 @@ from sys import argv
 def fix_content(content):
     content = '     ' + content
     content = content.replace('<br>', '\n     ')
+    content = '    --\n' + content + '\n    --\n'
     return content
 def fix_comment(comment):
     comment = comment.replace('<br>', '\n         ')
@@ -64,7 +65,7 @@ while True:
             tmp = msg.find('--content')
             the_content = msg[tmp+10:]
             the_content = fix_content(the_content)
-            the_content = '    --\n' + the_content + '\n    --\n'
+            #the_content = '    --\n' + the_content + '\n    --\n'
             post_id_loc = recv.find('\n')
             post_id = recv[post_id_loc+1:]
             post_name = login_name + '_post' + post_id + '.txt'
@@ -99,7 +100,7 @@ while True:
             target_object = login_bucket.Object(filename)
             target_object.delete()
         
-        elif command[0] == 'update-post' and command[2] == '--content' and recv == 'Update successfully.\n':
+        elif command[0] == 'update-post' and msg.find('--content') and recv == 'Update successfully.\n':
             #update success
             print(recv, end = '')
             tmp = msg.find('--content')
@@ -130,8 +131,28 @@ while True:
             fp.write(the_comment)
             fp.close()
             target_bucket.upload_file(filename, filename)
-
+        elif command[0] == 'mail-to' and recv[0:19] == 'Sent successfully.\n':
+            print('Sent successfully.\n', end = '')
+            the_id = recv.split('\n')
+            tmp = msg.find('--content')
+            the_content = msg[tmp+10:]
+            the_content = fix_content(the_content) 
+            r_name = command[1]     #receiver name
+            filename = r_name + '_mail' + the_id[1] + '.txt'
+            bucket_name = prefix + r_name.lower()
+            target_bucket = s3.Bucket(bucket_name)
+            fp = open(filename, 'w')
+            fp.write(the_content)
+            fp.close()
+            target_bucket.upload_file(filename, filename)
+        elif command[0] == 'retr-mail' and recv[0:7] == 'Subject':
+            print(recv, end = '')
+            filename = login_name + '_mail'+ command[1] +'.txt'
+            target_object = login_bucket.Object(filename)
+            object_content = target_object.get()['Body'].read().decode()
+            print(object_content, end = '')
         else:
             print(recv, end = '')
+        
 client.close()
 print('Bye!!!!!!')
