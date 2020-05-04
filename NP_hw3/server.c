@@ -947,7 +947,10 @@ void* conn(void *arg){
 			outfp = fopen("data.txt", "w");
 			fprintf(outfp, "user:\n%d\n", acc_num);
 			for(int j = 0; j < acc_num; j++){
-				fprintf(outfp, "%d %d %s %s %s\n", database[j].regis, database[j].login, database[j].name, database[j].email, database[j].password);
+				fprintf(outfp, "%d %d %d %s %s %s\n", database[j].regis, database[j].login, database[j].acc_mail, database[j].name, database[j].email, database[j].password);
+				for(int k = 1; k <= database[j].acc_mail; k++){
+					fprintf(outfp, "%d %d\n%s\n%s\n%s\n", database[j].mails[k].id, database[j].mails[k].exist, database[j].mails[k].from, database[j].mails[k].subject, database[j].mails[k].date);
+				}
 			}
 
 			fprintf(outfp, "board:\n%d\n", acc_board);
@@ -984,7 +987,7 @@ void* conn(void *arg){
 					acc_num ++;
 					fgets(tmp_buf, 1024, infp);
 					pch = strtok(tmp_buf, delim);
-					for(int j = 0; j < 5; j++){
+					for(int j = 0; j < 6; j++){
 						switch(j){
 							case 0:	
 								database[i].regis = atoi(pch);
@@ -993,18 +996,45 @@ void* conn(void *arg){
 								database[i].login = atoi(pch);
 								break;
 							case 2: 
+								database[i].acc_mail = atoi(pch);
+								break;
+							case 3:
 								strcpy(database[i].name, pch);
 								break;
-							case 3: 
+							case 4: 
 								strcpy(database[i].email, pch);
 								break;
-							case 4:{
+							case 5:{
 								       strncpy(database[i].password, pch, strlen(pch)-1);
 								       break;
 							       }
 						}
 						pch = strtok(NULL, delim);
-					}	
+					}
+					for(int l = 1; l <= database[i].acc_mail; l++){
+						fgets(tmp_buf, 1024, infp);
+                                        	pch = strtok(tmp_buf, delim);
+                                        	for(int j = 0; j < 2; j++){
+							switch(j){
+								case 0:
+									database[i].mails[l].id = atoi(pch);
+									break;
+								case 1:
+									database[i].mails[l].exist = atoi(pch);
+                                                                        break;
+							}
+						}
+						pch = strtok(NULL, delim);
+						fgets(tmp_buf, 1024, infp);	//from
+						fix_file_lines(tmp_buf);
+						strcpy(database[i].mails[l].from, tmp_buf);
+						fgets(tmp_buf, 1024, infp);	//subject
+                                                fix_file_lines(tmp_buf);
+                                                strcpy(database[i].mails[l].subject, tmp_buf);
+						fgets(tmp_buf, 1024, infp);     //date
+                                                fix_file_lines(tmp_buf);
+                                                strcpy(database[i].mails[l].date, tmp_buf);
+					}
 					//printf("%s\n", pch);
 					//pch = strtok(NULL, delim);
 				}
