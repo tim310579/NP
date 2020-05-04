@@ -312,7 +312,7 @@ void* conn(void *arg){
 	char recv_msg[BUFFER_SIZE];
 	//bzero(recv_msg, BUFFER_SIZE);
 	//long byte_num = recv(fd, recv_msg, BUFFER_SIZE, 0); 
-	send(fd, SUC0, sizeof(SUC0), 0);
+	send(fd, SUC0, strlen(SUC0), 0);
 	while(1){
                 //send(fd, "% ", 2, 0);
                 //printf("%d\n\n", clientfd);
@@ -372,12 +372,12 @@ void* conn(void *arg){
 			//printf("||%s||%s||\n", temp, tmp3);
 			int reg_yn = 1;
 		    	if(tmp != 4) {
-				send(fd, ERR1, sizeof(ERR1), 0);
+				send(fd, ERR1, strlen(ERR1), 0);
 		            	reg_yn = 0;
 			}
 			for(int j = 0; j < acc_num; j++){
 				if(!strcmp(tmp1, database[j].name) || !strcmp(tmp2, database[j].email)){
-					send(fd, ERR2, sizeof(ERR2), 0);
+					send(fd, ERR2, strlen(ERR2), 0);
 					reg_yn = 0;
 				}
 			}
@@ -423,9 +423,7 @@ void* conn(void *arg){
 				if(tmp >= 3) break;
 				pch = strtok(NULL, delim);
 			}
-			//if(tmp2[sizeof(tmp2)] == '\n'){ //last one is '\n'
-                          //      tmp2[sizeof(tmp2)] = '\0';
-                        //}
+			
 			char temp[100] = "";
 			int flag = 0;
                         for(int l = 0; l < 100; l++){
@@ -442,13 +440,13 @@ void* conn(void *arg){
 			//printf("%s||%s||\n", temp, tmp2);
 			int log_yn = 1;
 			if(tmp != 3){
-				send(fd, ERR3, sizeof(ERR3), 0);
+				send(fd, ERR3, strlen(ERR3), 0);
 			        log_yn = 0;
 			}
 			else{
 				int find = 0;
 				if(login_yn == 1){	//already login, logout first
-					send(fd, ERR5, sizeof(ERR5), 0);
+					send(fd, ERR5, strlen(ERR5), 0);
 				}
 				else{
 					for(int j = 0; j < acc_num; j++){
@@ -473,33 +471,33 @@ void* conn(void *arg){
 						}
 					}
 					if(find = 0 || login_yn == 0){	//wrong name or password
-						send(fd, ERR4, sizeof(ERR4), 0);
+						send(fd, ERR4, strlen(ERR4), 0);
 					}
 				}
 			}
 		}
 		else if(!strncmp(recv_msg, "logout", 6)){
 			if(login_yn == 0){	//login first
-				send(fd, ERR6, sizeof(ERR6), 0);
+				send(fd, ERR6, strlen(ERR6), 0);
 			}
 			else{	//cam logout
 				char suc[100] = "Bye, ";
 				strcat(suc, login_name);
 				strcat(suc, ".\n");
-				send(fd, suc, sizeof(suc), 0);
+				send(fd, suc, strlen(suc), 0);
 				login_yn = 0;
 				database[login_num].login = 0;
 			}
 		}
 		else if(!strncmp(recv_msg, "whoami", 6)){
 			if(login_yn == 0){	//login first
-				send(fd, ERR6, sizeof(ERR6), 0);
+				send(fd, ERR6, strlen(ERR6), 0);
 			}
 			else{
 				char tmp[100] = "";
 				strcpy(tmp, login_name);
 				strcat(tmp, "\n");
-				send(fd, tmp, sizeof(tmp), 0);
+				send(fd, tmp, strlen(tmp), 0);
 			}
 		}
 		else if(!strncmp(recv_msg, "exit", 4)){
@@ -509,7 +507,7 @@ void* conn(void *arg){
 		}
 		else if(!strncmp(recv_msg, "create-board", 12)){
 			if(login_yn == 0){
-				send(fd, ERR6, sizeof(ERR6), 0);
+				send(fd, ERR6, strlen(ERR6), 0);
 			}
 			else{
 				if(!strncmp(recv_msg, "create-board ", 13)){
@@ -525,21 +523,21 @@ void* conn(void *arg){
 						}
 					}
 					if(!strcmp(tmp1, "")){
-						send(fd, ERR10, sizeof(ERR10), 0);
+						send(fd, ERR10, strlen(ERR10), 0);
 					}
 					else if(repeat_name == 1){
-						send(fd, ERR8, sizeof(ERR8), 0);
+						send(fd, ERR8, strlen(ERR8), 0);
 					}
 					else if(repeat_name == 0){
 						acc_board ++;
 						strcpy(allboard[acc_board].name, tmp1);
 						allboard[acc_board].num = acc_board;
 						strcpy(allboard[acc_board].moderator, login_name);
-						send(fd, SUC4, sizeof(SUC4), 0);
+						send(fd, SUC4, strlen(SUC4), 0);
 					}	
 				}
 				else{
-					send(fd, ERR10, sizeof(ERR10), 0);
+					send(fd, ERR10, strlen(ERR10), 0);
 				}	
 			}
 		}
@@ -549,13 +547,13 @@ void* conn(void *arg){
 			fix_endline(search);
 			char send0[4096] = "";
 			sprintf(send0, "    Index      Name       Moderator\n");
-			//send(fd, send0, sizeof(send0), 0);
+			
 			for(int l = 1; l <= acc_board; l++){
 				char send_msg[1024] = "";
 				if(strstr(allboard[l].name, search) != NULL || strstr(allboard[l].moderator, search) != NULL){
 					sprintf(send_msg, "    %-11d%-11s%-11s\n", allboard[l].num, allboard[l].name, allboard[l].moderator);
 					strcat(send0, send_msg);
-					//send(fd, send_msg, sizeof(send_msg), 0);
+					//send(fd, send_msg, strlen(send_msg), 0);
 				}
 			}
 			send(fd, send0, strlen(send0), 0);
@@ -563,23 +561,23 @@ void* conn(void *arg){
 		else if(!strncmp(recv_msg, "list-board", 10)){
 			char send0[4096] = "";
 			sprintf(send0, "    Index      Name       Moderator\n");
-                        //send(fd, send0, sizeof(send0), 0);
+                        //send(fd, send0, strlen(send0), 0);
 			for(int l = 1; l <= acc_board; l++){
 				char send_msg[1024] = "";
 				sprintf(send_msg, "    %-11d%-11s%-11s\n", allboard[l].num, allboard[l].name, allboard[l].moderator);
 				strcat(send0, send_msg);
-				//send(fd, send_msg, sizeof(send_msg), 0);
+				//send(fd, send_msg, strlen(send_msg), 0);
 			}
 			send(fd, send0, strlen(send0), 0);
 		}
 		else if(!strncmp(recv_msg, "create-post", 11)){
 			if(login_yn == 0){
-				send(fd, ERR6, sizeof(ERR6), 0);
+				send(fd, ERR6, strlen(ERR6), 0);
 			}
 			else{
 				if(!strncmp(recv_msg, "create-post ", 12)){
 					if(strstr(recv_msg, " --title ") == NULL || strstr(recv_msg, " --content ") == NULL){
-						send(fd, ERR11, sizeof(ERR11), 0);
+						send(fd, ERR11, strlen(ERR11), 0);
 					}
 					else{
 						char *name = strdup(recv_msg + 12);
@@ -606,7 +604,7 @@ void* conn(void *arg){
 
 
 						if(exist == 0){	//not exist
-							send(fd, ERR9, sizeof(ERR9), 0);
+							send(fd, ERR9, strlen(ERR9), 0);
 						}
 						else{
 							acc_post ++;
@@ -649,7 +647,7 @@ void* conn(void *arg){
 					}
 				}
 				else {
-					send(fd, ERR11, sizeof(ERR11), 0);
+					send(fd, ERR11, strlen(ERR11), 0);
 				}
 			}	
 		}
@@ -670,7 +668,7 @@ void* conn(void *arg){
 						if(!strcmp(board_name, allboard[l].name)) exist = 1;
 					}
 					if(exist == 0){	//not exist
-						send(fd, ERR9, sizeof(ERR9), 0);
+						send(fd, ERR9, strlen(ERR9), 0);
 					}
 					else{
 						char send0[4096] = "";
@@ -700,7 +698,7 @@ void* conn(void *arg){
                                                 if(!strcmp(board_name, allboard[l].name)) exist = 1;
                                         }
                                         if(exist == 0){ //not exist
-                                                send(fd, ERR9, sizeof(ERR9), 0);
+                                                send(fd, ERR9, strlen(ERR9), 0);
                                         }
                                         else{
 						char send0[4096] = "";
@@ -776,7 +774,7 @@ void* conn(void *arg){
                                 fix_endline(tmp_id);
                                 int real_id = atoi(tmp_id);
 				if(login_yn == 0){	//login first
-					send(fd, ERR6, sizeof(ERR6), 0);
+					send(fd, ERR6, strlen(ERR6), 0);
 				}
 				else if(real_id > acc_post) send(fd, ERR13, strlen(ERR13), 0);       //not exist
 				else if(posts[real_id].exist == 0){  //not exist
@@ -794,21 +792,21 @@ void* conn(void *arg){
 						send(fd, send0, strlen(send0), 0);
 					}
 					else{	//not owner
-						send(fd, ERR15, sizeof(ERR15), 0);
+						send(fd, ERR15, strlen(ERR15), 0);
 					}
 				}
 			}	
 			else{
-				send(fd, ERR16, sizeof(ERR16), 0);
+				send(fd, ERR16, strlen(ERR16), 0);
 			}
 		}
 		else if(!strncmp(recv_msg, "update-post", 11)){
 			if(!strncmp(recv_msg, "update-post ", 12)){
 				if(login_yn == 0){
-                                        send(fd, ERR6, sizeof(ERR6), 0);
+                                        send(fd, ERR6, strlen(ERR6), 0);
                                 }
 				else if(strstr(recv_msg, " --title ") == NULL && strstr(recv_msg, " --content ") == NULL){
-					send(fd, ERR18, sizeof(ERR18), 0);
+					send(fd, ERR18, strlen(ERR18), 0);
 				}
 				else{
 					char *tmp_id = strdup(recv_msg + 12);
@@ -831,7 +829,7 @@ void* conn(void *arg){
                                                 	        send(fd, SUC9, strlen(SUC9), 0); //is owner
 							}
 							else{
-								send(fd, ERR15, sizeof(ERR15), 0); //not owner
+								send(fd, ERR15, strlen(ERR15), 0); //not owner
 							}
 						}
 					}
@@ -841,9 +839,9 @@ void* conn(void *arg){
                                                 char real_id[10];
                                                 substr(real_id, tmp_id, 0, len-1);
                                                 int true_id = atoi(real_id);
-						if(true_id > acc_post) send(fd, ERR13, sizeof(ERR13), 0);       //not exist
+						if(true_id > acc_post) send(fd, ERR13, strlen(ERR13), 0);       //not exist
 						else if(posts[true_id].exist == 0){
-                                                        send(fd, ERR13, sizeof(ERR13), 0);
+                                                        send(fd, ERR13, strlen(ERR13), 0);
                                                 }
                                                 else{
                                                         if(!strcmp(posts[true_id].author, login_name)){
@@ -854,7 +852,7 @@ void* conn(void *arg){
                                                                 send(fd, SUC9, strlen(SUC9), 0); //is owner
                                                         }
                                                         else{
-                                                                send(fd, ERR15, sizeof(ERR15), 0); //not owner
+                                                                send(fd, ERR15, strlen(ERR15), 0); //not owner
                                                         }
                                                 }
 					}
@@ -862,14 +860,14 @@ void* conn(void *arg){
 				}
 			}
 			else{
-				send(fd, ERR18, sizeof(ERR18), 0);
+				send(fd, ERR18, strlen(ERR18), 0);
 			}
 			
 		}
 		else if(!strncmp(recv_msg, "comment", 7)){
 			if(!strncmp(recv_msg, "comment ", 8)){
 				if(login_yn == 0){
-					send(fd, ERR6, sizeof(ERR6), 0);
+					send(fd, ERR6, strlen(ERR6), 0);
 				}
 				else{
 					char *delim = " ";
@@ -907,7 +905,7 @@ void* conn(void *arg){
 				}	
 			}
 			else{
-				send(fd, ERR19, sizeof(ERR19), 0);
+				send(fd, ERR19, strlen(ERR19), 0);
 			}
 		}
 		else if(!strncmp(recv_msg, "list-all-post", 13)){
@@ -922,7 +920,7 @@ void* conn(void *arg){
 					//printf("%d %s %s %s\n", posts[l].id, posts[l].title, posts[l].author, posts[l].datem);
 					sprintf(send_msg, "    %-15d%-15d%-15s%-15s%-15s%-15s\n", posts[l].id, posts[l].exist, posts[l].bname, posts[l].title, posts[l].author, posts[l].datem);
 					strcat(send0, send_msg);
-					//send(fd, send_msg, sizeof(send_msg), 0);
+					//send(fd, send_msg, strlen(send_msg), 0);
 				}
 			}
 			send(fd, send0, strlen(send0), 0);
@@ -966,14 +964,14 @@ void* conn(void *arg){
 				}
 			}
 			
-			send(fd, SUC7, sizeof(SUC7), 0);
+			send(fd, SUC7, strlen(SUC7), 0);
 			fclose(outfp);
 		}
 		else if(!strncmp(recv_msg, "load", 4)){
 			FILE *infp;
 			infp = fopen("data.txt", "r");
 			if(infp == NULL){
-				send(fd, ERR17, sizeof(ERR17), 0);
+				send(fd, ERR17, strlen(ERR17), 0);
 			}
 			else{
 				char tmp_buf[1024];
@@ -1161,7 +1159,8 @@ void* conn(void *arg){
 					sprintf(temp_time, "%02d/%02d", tp->tm_mon+1, tp->tm_mday);
 					for(int k = 0; k < acc_num; k++){
 						if(!strcmp(r_name, database[k].name)){	//find!!
-							exist = 1;									database[k].acc_mail++;
+							exist = 1;
+							database[k].acc_mail++;
 							int mail_id = database[k].acc_mail;
 							the_mail_id = database[k].mails[mail_id].unique_id;
 							database[k].mails[mail_id].exist = 1;
