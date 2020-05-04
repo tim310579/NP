@@ -51,6 +51,7 @@
 #define SUC9 "Update successfully.\n"
 #define SUC10 "Comment successfully.\n"
 #define SUC11 "Sent successfully.\n"
+#define SUC12 "Mail deleted.\n"
 
 #define prefix "0616027hw3-16567629137-10923492449-"
 
@@ -1219,7 +1220,30 @@ void* conn(void *arg){
 			}
 		}
 		else if(!strncmp(recv_msg, "delete-mail", 11)){
-			
+			if(login_yn == 0){	//login first
+				send(fd, ERR6, strlen(ERR6), 0);
+			}
+			else{
+				char tmp_id[100];
+				strcpy(tmp_id, recv_msg + 12);
+				fix_endline(tmp_id);
+				int real_id = atoi(tmp_id);
+				for(int k = 0; k < acc_num; k++){
+					if(!strcmp(login_name, database[k].name)){
+						if(real_id > database[k].acc_mail){
+							send(fd, ERR22, strlen(ERR22), 0);
+						}
+						else if(database[k].mails[real_id].exist == 0){
+							send(fd, ERR22, strlen(ERR22), 0);
+						}
+						else{
+							database[k].mails[real_id].exist = 0;
+							send(fd, SUC12, strlen(SUC12), 0);	
+						}
+					}
+				}
+
+			}
 		}
 		else if(!strncmp(recv_msg, "nothing to do", 13)){
 			//send(fd, "", 0, 0);

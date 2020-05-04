@@ -151,6 +151,11 @@ while True:
             target_object = login_bucket.Object(filename)
             object_content = target_object.get()['Body'].read().decode()
             print(object_content, end = '')
+        elif command[0] == 'delete-mail' and recv == 'Mail deleted.\n':
+            print(recv, end = '')
+            filename = login_name + '_mail' + command[1] + '.txt'
+            target_object = login_bucket.Object(filename)
+            target_object.delete()
         else:
             print(recv, end = '')
         
