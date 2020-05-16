@@ -8,6 +8,11 @@ def fix_content(content):
     content = content.replace('<br>', '\n     ')
     content = '    --\n' + content + '\n    --\n'
     return content
+def fix_mail_content(content):
+    content = '     ' + content
+    content = content.replace('<br>', '\n     ')
+    content = '    --\n' + content + '\n'
+    return content
 def fix_comment(comment):
     comment = comment.replace('<br>', '\n         ')
     return comment
@@ -135,7 +140,7 @@ while True:
             the_id = recv.split('\n')
             tmp = msg.find('--content')
             the_content = msg[tmp+10:]
-            the_content = fix_content(the_content) 
+            the_content = fix_mail_content(the_content) 
             r_name = command[1]     #receiver name
             filename = r_name + '_mail' + the_id[1] + '.txt'
             bucket_name = prefix + r_name.lower()
@@ -144,7 +149,7 @@ while True:
             fp.write(the_content)
             fp.close()
             target_bucket.upload_file(filename, filename)
-        elif command[0] == 'retr-mail' and recv[0:7] == 'Subject':
+        elif command[0] == 'retr-mail' and recv.find('Subject') > 0:
             part = recv.split('UNI_ID')
             print(part[0], end = '')
             filename = login_name + '_mail'+ part[1] +'.txt'
@@ -161,4 +166,4 @@ while True:
             print(recv, end = '')
         
 client.close()
-print('Bye!!!!!!')
+

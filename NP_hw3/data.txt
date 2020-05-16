@@ -1,24 +1,37 @@
 user:
-2
-1 0 0 a0 0 0
-1 1 4 a1 1 1
+4
+1 0 0 venus venus@nctu.edu.tw 11131
+1 0 0 apollo apollo@nctu.edu.tw 15313
+1 1 1 mars mars@nctu.edu.tw 11215
 1 1
-a0
-0487
-05/04
-2 1
-a0
-oqoq
-05/04
-3 1
-a0
-aaa
-05/04
-4 1
-a0
-oGGGGq
-05/04
+mercury
+hello mars
+05/15
+1 0 0 mercury mercury@nctu.edu.tw 13154
 board:
-0
+2
+1 hi_ih venus
+2 he_eh mars
 post:
+2
+hi_ih
+1
 0
+venus
+hello my first post
+2020-05-15
+05/15
+This is my first post
+content is over
+0
+hi_ih
+2
+1
+venus
+hello my second post
+2020-05-15
+05/15
+This is my second post.
+content is over
+1
+mercury: Hi!

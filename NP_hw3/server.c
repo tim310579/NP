@@ -14,10 +14,10 @@
 #include <ctype.h>
 
 #define STDIN 0
-#define MAX_QUE 20
+#define MAX_QUE 30
 #define BUFFER_SIZE 1024
 #define ERR1 "Usage: register <username> <email> <password>\n"
-#define ERR2 "Username or Email is already used\n"
+#define ERR2 "Username is already used.\n"
 #define ERR3 "Usage: login <username> <password>\n"
 #define ERR4 "Login failed.\n"
 #define ERR5 "Please logout first.\n"
@@ -141,7 +141,7 @@ typedef struct Post Post;
 
 struct Mail{
 	int id, exist, unique_id;
-	char from[100], subject[1024], content[1024], date[10];
+	char from[100], subject[1024], content[1024], date[10], datey[20];
 };
 
 struct Data{
@@ -176,8 +176,8 @@ int main(int argc, const char * argv[])
 {
 	
 //	struct Data database[20];
-	pthread_t t[20];
-	void *ret[20];
+	pthread_t t[30];
+	void *ret[30];
 	
 	
 	int j;
@@ -201,6 +201,7 @@ int main(int argc, const char * argv[])
 			strcpy(database[j].mails[k].subject, "");
 			strcpy(database[j].mails[k].content, "");
 			strcpy(database[j].mails[k].date, "");
+			strcpy(database[j].mails[k].datey, "");
 		}
 	}
 	for(j = 0; j < 101; j++){
@@ -432,16 +433,16 @@ void* conn(void *arg){
 					flag = 1;
 					break;
 					//del(tmp2, l, 1);
-                                        //printf("here %c||\n", tmp3[l]);
+                                        //printf("here ||\n");
                                 }
                         }
 			if(flag == 0) strcpy(temp, tmp2);
 			strcpy(tmp2, temp);
 			//printf("%s||%s||\n", temp, tmp2);
-			int log_yn = 1;
+			//int log_yn = 1;
 			if(tmp != 3){
 				send(fd, ERR3, strlen(ERR3), 0);
-			        log_yn = 0;
+			        login_yn = 0;
 			}
 			else{
 				int find = 0;
@@ -456,15 +457,16 @@ void* conn(void *arg){
 								char suc[100] = "Welcome, ";
 								strcat(suc, tmp1);
 								strcat(suc, ".\n");
-								send(fd, suc, strlen(suc), 0);
+								//send(fd, suc, strlen(suc), 0);
 								database[j].login = 1;
 								login_yn = 1;
 								strcpy(login_name, tmp1);
 								login_num = j;
+								send(fd, suc, strlen(suc), 0);
 								//right password
 							}
 							else{
-								log_yn = 0;
+								login_yn = 0;
 								//send(fd, ERR4, sizeof(ERR4), 0);
 								//wrong password
 							}
@@ -503,11 +505,13 @@ void* conn(void *arg){
 		else if(!strncmp(recv_msg, "exit", 4)){
 			send(fd, "close", 5, 0);
 			close(fd);
+			break;
 			//exit(0);
 		}
 		else if(!strncmp(recv_msg, "create-board", 12)){
 			if(login_yn == 0){
 				send(fd, ERR6, strlen(ERR6), 0);
+				//printf("%d\n", login_yn);
 			}
 			else{
 				if(!strncmp(recv_msg, "create-board ", 13)){
@@ -672,14 +676,14 @@ void* conn(void *arg){
 					}
 					else{
 						char send0[4096] = "";
-						sprintf(send0, "    Id               Title            Author           Date\n");
+						sprintf(send0, "\tID\tTitle\tAuthor\tDate\n");
 						//send(fd, send0, strlen(send0), 0);
 						for(int l = 1; l <= acc_post; l++){
 							char send_msg[1500] = "";
 							//printf("%s||%s||\n", board_name, posts[l].bname);
 							if(!strcmp(board_name, posts[l].bname) && strstr(posts[l].title, real_key) != NULL && posts[l].exist > 0){	//bname is right && key matched && existed
 
-								sprintf(send_msg, "    %-17d%-17s%-17s%-17s\n", posts[l].id, posts[l].title, posts[l].author, posts[l].datem);
+								sprintf(send_msg, "\t%-d\t%-s\t%-s\t%-s\n", posts[l].id, posts[l].title, posts[l].author, posts[l].datem);
 								strcat(send0, send_msg);
 								//send(fd, send_msg, strlen(send_msg), 0);
 							}
@@ -702,14 +706,14 @@ void* conn(void *arg){
                                         }
                                         else{
 						char send0[4096] = "";
-						sprintf(send0, "    Id               Title            Author           Date\n");
+						sprintf(send0, "\tID\tTitle\tAuthor\tDate\n");
 						//send(fd, send0, strlen(send0), 0);
 						for(int l = 1; l <= acc_post; l++){
 							char send_msg[1500] = "";
 							//printf("%s||%s||\n", board_name, posts[l].bname);
 							if(!strcmp(board_name, posts[l].bname) && posts[l].exist > 0){
 
-								sprintf(send_msg, "    %-17d%-17s%-17s%-17s\n", posts[l].id, posts[l].title, posts[l].author, posts[l].datem);
+								sprintf(send_msg, "\t%-d\t%-s\t%-s\t%-s\n", posts[l].id, posts[l].title, posts[l].author, posts[l].datem);
 								strcat(send0, send_msg);
 								//send(fd, send_msg, strlen(send_msg), 0);
 							}
@@ -948,7 +952,7 @@ void* conn(void *arg){
 			for(int j = 0; j < acc_num; j++){
 				fprintf(outfp, "%d %d %d %s %s %s\n", database[j].regis, database[j].login, database[j].acc_mail, database[j].name, database[j].email, database[j].password);
 				for(int k = 1; k <= database[j].acc_mail; k++){
-					fprintf(outfp, "%d %d\n%s\n%s\n%s\n", database[j].mails[k].id, database[j].mails[k].exist, database[j].mails[k].from, database[j].mails[k].subject, database[j].mails[k].date);
+					fprintf(outfp, "%d %d\n%s\n%s\n%s\n%s\n", database[j].mails[k].id, database[j].mails[k].exist, database[j].mails[k].from, database[j].mails[k].subject, database[j].mails[k].date, database[j].mails[k].datey);
 				}
 			}
 
@@ -1033,6 +1037,9 @@ void* conn(void *arg){
 						fgets(tmp_buf, 1024, infp);     //date
                                                 fix_file_lines(tmp_buf);
                                                 strcpy(database[i].mails[l].date, tmp_buf);
+						fgets(tmp_buf, 1024, infp);     //date
+                                                fix_file_lines(tmp_buf);
+                                                strcpy(database[i].mails[l].datey, tmp_buf);
 					}
 					//printf("%s\n", pch);
 					//pch = strtok(NULL, delim);
@@ -1156,7 +1163,9 @@ void* conn(void *arg){
 					time(&p);
 					tp = localtime(&p);
 					char temp_time[10];
+					char tmp_time_y[20];
 					sprintf(temp_time, "%02d/%02d", tp->tm_mon+1, tp->tm_mday);
+					sprintf(tmp_time_y, "%04d-%02d-%02d", tp->tm_year+1900, tp->tm_mon+1, tp->tm_mday);
 					for(int k = 0; k < acc_num; k++){
 						if(!strcmp(r_name, database[k].name)){	//find!!
 							exist = 1;
@@ -1168,6 +1177,7 @@ void* conn(void *arg){
 							strcpy(database[k].mails[mail_id].subject, real_subject);
 							strcpy(database[k].mails[mail_id].content, real_content);
 							strcpy(database[k].mails[mail_id].date, temp_time);
+							strcpy(database[k].mails[mail_id].datey, tmp_time_y);
 							break;
 						}
 					}
@@ -1238,9 +1248,9 @@ void* conn(void *arg){
 						}	
 						else{
 							char send_subject[1100], send_from[1100], send_date[1100], send_unique_id[100];
-							sprintf(send_subject, "Subject\t: %s\n", database[k].mails[real_id].subject);
-							sprintf(send_from, "From\t: %s\n", database[k].mails[real_id].from);
-							sprintf(send_date, "Date\t: %s\n", database[k].mails[real_id].date);
+							sprintf(send_subject, "\tSubject\t:%s\n", database[k].mails[real_id].subject);
+							sprintf(send_from, "\tFrom\t:%s\n", database[k].mails[real_id].from);
+							sprintf(send_date, "\tDate\t:%s\n", database[k].mails[real_id].datey);
 							sprintf(send_unique_id, "UNI_ID%d", database[k].mails[real_id].unique_id);
 							strcat(send0, send_subject);
 							strcat(send0, send_from);
@@ -1316,4 +1326,5 @@ void* conn(void *arg){
 
 	}
 	}
+	pthread_exit(NULL);
 }
