@@ -1,4 +1,0 @@
-    --
-     Hey there!
-    --
-     mercury: Hi!
