@@ -550,13 +550,14 @@ void* conn(void *arg){
 			strncpy(search, recv_msg + 13, 100);
 			fix_endline(search);
 			char send0[4096] = "";
-			sprintf(send0, "    Index      Name       Moderator\n");
-			
+			sprintf(send0, "\tIndex\tName\tModerator\n");
+			int cnt = 1;
 			for(int l = 1; l <= acc_board; l++){
 				char send_msg[1024] = "";
 				if(strstr(allboard[l].name, search) != NULL || strstr(allboard[l].moderator, search) != NULL){
-					sprintf(send_msg, "    %-11d%-11s%-11s\n", allboard[l].num, allboard[l].name, allboard[l].moderator);
+					sprintf(send_msg, "\t%-d\t%-s\t%-s\n", cnt, allboard[l].name, allboard[l].moderator);
 					strcat(send0, send_msg);
+					cnt ++;
 					//send(fd, send_msg, strlen(send_msg), 0);
 				}
 			}
@@ -564,11 +565,11 @@ void* conn(void *arg){
 		}
 		else if(!strncmp(recv_msg, "list-board", 10)){
 			char send0[4096] = "";
-			sprintf(send0, "    Index      Name       Moderator\n");
+			sprintf(send0, "\tIndex\tName\tModerator\n");
                         //send(fd, send0, strlen(send0), 0);
 			for(int l = 1; l <= acc_board; l++){
 				char send_msg[1024] = "";
-				sprintf(send_msg, "    %-11d%-11s%-11s\n", allboard[l].num, allboard[l].name, allboard[l].moderator);
+				sprintf(send_msg, "\t%-d\t%-s\t%-s\n", l, allboard[l].name, allboard[l].moderator);
 				strcat(send0, send_msg);
 				//send(fd, send_msg, strlen(send_msg), 0);
 			}
