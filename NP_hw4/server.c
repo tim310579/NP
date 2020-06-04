@@ -1416,8 +1416,64 @@ void* conn(void *arg){
 
 			}
 			else if(!strncmp(recv_msg, "subscribe --author", 18)){
-
+				if(strstr(recv_msg, "--keyword") != NULL){ //correct format
+					char *author = strdup(recv_msg + 19);
+					char *keyword = strstr(recv_msg, "--keyword");
+					int len = strlen(author) - strlen(keyword);
+					char author_name[100];	//real board name
+					substr(author_name, author, 0, len - 1);
+					char real_keyword[100];
+					strcpy(real_keyword, keyword + 10);
+					//printf("%s %s\n", board_name, real_keyword);
+					int already_sub = 0, already_have_author = 0;
+					int loc_user = 0, loc_author = 0;
+					for(int i = 0; i < acc_num; i++){
+						if(!strcmp(login_name, database[i].name)){
+							loc_user = i;
+							for(int j = 0; j < database[i].sub_authors; j++){
+								
+								if(!strcmp(author_name, database[i].sub_author[j].sub_author_name)){// board alreadexist
+									loc_author = j;
+									already_have_author = 1;
+									for(int k = 0; k < database[i].sub_author[j].acc_sub; k++){
+										if(!strcmp(real_keyword, database[i].sub_author[j].sub_author_key[k])){
+											already_sub = 1;//key already exist
+											break;
+										}
+									}
+									break;
+								}
+							}
+							break;
+						}
+					}
+					if(already_sub == 1){
+						send(fd, ERR26, strlen(ERR26), 0);
+					}
+					else{
+						if(already_have_author> 0){	//sub board with new keyword
+							int tmp_subs = database[loc_user].sub_author[loc_author].acc_sub;
+							strcpy(database[loc_user].sub_author[loc_author].sub_author_key[tmp_subs], real_keyword);
+							database[loc_user].sub_author[loc_author].acc_sub++;
+							send(fd, SUC13, strlen(SUC13), 0);
+						}
+						else{	//sub with a new board
+							int tmp_authors = database[loc_user].sub_authors;
+							strcpy(database[loc_user].sub_author[tmp_authors].sub_author_name, author_name);
+							strcpy(database[loc_user].sub_author[tmp_authors].sub_author_key[0], real_keyword);
+							database[loc_user].sub_authors ++;
+							database[loc_user].sub_author[tmp_authors].acc_sub ++;
+							send(fd, SUC13, strlen(SUC13), 0);
+						}
+					}
+				}
+				else{
+					send(fd, ERR24, strlen(ERR24), 0);
+				}
                         }
+			else{
+				send(fd, ERR25, strlen(ERR25), 0);
+			}
 		}
 		else if(!strncmp(recv_msg, "list-sub", 8)){
 			//if(login_yn == 0){    //login first
@@ -1437,19 +1493,34 @@ void* conn(void *arg){
 								for(int k = 0; k < database[i].sub_board[j].acc_sub; k++){
 									char tmp[110];
 									//printf("%dlala\n", k);
-									if(k ==  database[i].sub_board[j].acc_sub-1){
-										sprintf(tmp, "%s", database[i].sub_board[j].sub_board_key[k]);
-									}
-									else{
-										sprintf(tmp, "%s, ", database[i].sub_board[j].sub_board_key[k]);
-									}
-										strcat(send0, tmp);
+										
+									sprintf(tmp, "%s, ", database[i].sub_board[j].sub_board_key[k]);	
+									strcat(send0, tmp);
 								}
-
-								strcat(send0, "; ");
+								strcat(send0, "---");
+								strrpc(send0, ", ---", "; ");
+								//strcat(send0, "; ");
                                 			}
-
                                			}
+						strcat(send0, "\nAuthor: ");
+						for(int j = 0; j < database[i].sub_authors; j++){
+                                                        if(strcmp("None", database[i].sub_author[j].sub_author_name)){
+                                                                char temp[110];
+                                                                //printf("%d\n", j);
+                                                                sprintf(temp, "%s: ", database[i].sub_author[j].sub_author_name);
+                                                                strcat(send0, temp);
+                                                                for(int k = 0; k < database[i].sub_author[j].acc_sub; k++){
+                                                                        char tmp[110];
+                                                                        //printf("%dlala\n", k);
+
+                                                                        sprintf(tmp, "%s, ", database[i].sub_author[j].sub_author_key[k]);
+                                                                        strcat(send0, tmp);
+                                                                }
+                                                                strcat(send0, "---");
+                                                                strrpc(send0, ", ---", "; ");
+                                                                //strcat(send0, "; ");
+                                                        }
+                                                }
                                 		break;
                            		}
                 		}

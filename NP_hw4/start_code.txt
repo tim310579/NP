@@ -12,3 +12,7 @@ bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic test --f
 subscribe --board HAHA --keyword ooppp
 
 subscribe --board HeHe --keyword aaaaaa
+
+subscribe --author Timm --keyword aaadsadaaa
+
+subscribe --author Jackk --keyword lalalad
