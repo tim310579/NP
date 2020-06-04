@@ -6,3 +6,9 @@ sudo bin/kafka-server-start.sh config/server.properties
 
 
 bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic test --from-beginning
+
+
+
+subscribe --board HAHA --keyword ooppp
+
+subscribe --board HeHe --keyword aaaaaa

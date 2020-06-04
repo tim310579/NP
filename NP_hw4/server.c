@@ -41,6 +41,8 @@
 #define ERR23 "Usage: subscribe --board <boardname> --keyword <keyword>\n"
 #define ERR24 "Usage: subscribe --author <authorname> --keyword <keyword>\n"
 #define ERR25 "Usage: subscribe --board <boardname> --keyword <keyword>\n or\nUsage: subscribe --author <authorname> --keyword <keyword>\n"
+#define ERR26 "Already subscribed.\n"
+#define ERR27 "You haven't subscribed "
 
 #define SUC0 "********************************\n** Welcome to the BBS server. **\n********************************\n"
 #define SUC1 "Register successfully.\n"
@@ -148,8 +150,15 @@ struct Mail{
 	char from[100], subject[1024], content[1024], date[10], datey[20];
 };
 
-struct Pair{
-	char first[100], second[100];
+struct Sub_board{
+	int acc_sub;
+	char sub_board_name[100];
+	char **sub_board_key;
+};
+struct Sub_author{
+	int acc_sub;
+        char sub_author_name[100];
+        char **sub_author_key;
 };
 struct Data{
 	struct Mail mails[101];
@@ -157,8 +166,8 @@ struct Data{
 	char name[100], email[100], password[100];
 	char bucketname[100];
 	int acc_post, acc_mail;
-	struct Pair sub_board[100];
-	struct Pair sub_author[100];
+	struct Sub_board sub_board[100];
+	struct Sub_author sub_author[100];
 	int sub_boards, sub_authors;
 	
 };
@@ -217,8 +226,16 @@ int main(int argc, const char * argv[])
 			strcpy(database[j].mails[k].datey, "");
 		}
 		for(int k = 0; k < 100; k++){
-			strcpy(database[j].sub_board[k].first, "");
-			strcpy(database[j].sub_board[k].second, "");
+			database[j].sub_board[k].acc_sub = 0;
+			database[j].sub_author[k].acc_sub = 0;
+			strcpy(database[j].sub_board[k].sub_board_name, "");
+			strcpy(database[j].sub_author[k].sub_author_name, "");
+			database[j].sub_board[k].sub_board_key = (char**)malloc(sizeof(char*)*100);
+			database[j].sub_author[k].sub_author_key = (char**)malloc(sizeof(char*)*100);
+			for(int l = 0; l < 100; l++){
+				database[j].sub_board[k].sub_board_key[l] = (char*)malloc(sizeof(char)*100);
+				database[j].sub_author[k].sub_author_key[l] = (char*)malloc(sizeof(char)*100);
+			}
 		}
 	}
 	for(j = 0; j < 101; j++){
@@ -1350,7 +1367,48 @@ void* conn(void *arg){
 					substr(board_name, board, 0, len - 1);
 					char real_keyword[100];
 					strcpy(real_keyword, keyword + 10);
-					
+					//printf("%s %s\n", board_name, real_keyword);
+					int already_sub = 0, already_have_board = 0;
+					int loc_user = 0, loc_board = 0;
+					for(int i = 0; i < acc_num; i++){
+						if(!strcmp(login_name, database[i].name)){
+							loc_user = i;
+							for(int j = 0; j < database[i].sub_boards; j++){
+								
+								if(!strcmp(board_name, database[i].sub_board[j].sub_board_name)){// board alreadexist
+									loc_board = j;
+									already_have_board = 1;
+									for(int k = 0; k < database[i].sub_board[j].acc_sub; k++){
+										if(!strcmp(real_keyword, database[i].sub_board[j].sub_board_key[k])){
+											already_sub = 1;//key already exist
+											break;
+										}
+									}
+									break;
+								}
+							}
+							break;
+						}
+					}
+					if(already_sub == 1){
+						send(fd, ERR26, strlen(ERR26), 0);
+					}
+					else{
+						if(already_have_board> 0){	//sub board with new keyword
+							int tmp_subs = database[loc_user].sub_board[loc_board].acc_sub;
+							strcpy(database[loc_user].sub_board[loc_board].sub_board_key[tmp_subs], real_keyword);
+							database[loc_user].sub_board[loc_board].acc_sub++;
+							send(fd, SUC13, strlen(SUC13), 0);
+						}
+						else{	//sub with a new board
+							int tmp_boards = database[loc_user].sub_boards;
+							strcpy(database[loc_user].sub_board[tmp_boards].sub_board_name, board_name);
+							strcpy(database[loc_user].sub_board[tmp_boards].sub_board_key[0], real_keyword);
+							database[loc_user].sub_boards ++;
+							database[loc_user].sub_board[tmp_boards].acc_sub ++;
+							send(fd, SUC13, strlen(SUC13), 0);
+						}
+					}
 				}
 				else{
 					send(fd, ERR23, strlen(ERR23), 0);
@@ -1361,7 +1419,45 @@ void* conn(void *arg){
 
                         }
 		}
+		else if(!strncmp(recv_msg, "list-sub", 8)){
+			//if(login_yn == 0){    //login first
+                        //      send(fd, ERR6, strlen(ERR6), 0);
+                        //}
+			//else{
+				char send0[1000] = "Board: ";
+				for(int i = 0; i < acc_num; i++){
+                        		if(!strcmp(login_name, database[i].name)){
+                                		int loc_user = i;
+                                		for(int j = 0; j < database[i].sub_boards; j++){
+                                			if(strcmp("None", database[i].sub_board[j].sub_board_name)){
+                                				char temp[110];
+								//printf("%d\n", j);
+								sprintf(temp, "%s: ", database[i].sub_board[j].sub_board_name);
+								strcat(send0, temp);
+								for(int k = 0; k < database[i].sub_board[j].acc_sub; k++){
+									char tmp[110];
+									//printf("%dlala\n", k);
+									if(k ==  database[i].sub_board[j].acc_sub-1){
+										sprintf(tmp, "%s", database[i].sub_board[j].sub_board_key[k]);
+									}
+									else{
+										sprintf(tmp, "%s, ", database[i].sub_board[j].sub_board_key[k]);
+									}
+										strcat(send0, tmp);
+								}
 
+								strcat(send0, "; ");
+                                			}
+
+                               			}
+                                		break;
+                           		}
+                		}
+				strcat(send0, "\n");
+				strrpc(send0, "; \n", "\n");
+				send(fd, send0, strlen(send0), 0);
+			//}
+		}
 		else{
 			//signal(SIGPIPE,SIG_IGN);
 			send(fd, ERR7, strlen(ERR7), 0);
