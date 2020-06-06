@@ -1,5 +1,11 @@
 import boto3
 import socket, sys
+from kafka import KafkaProducer
+from kafka import KafkaConsumer
+import threading
+import time, sys
+import os
+import signal
 
 from sys import argv
 
@@ -65,14 +71,16 @@ while True:
             login_bucket = s3.Bucket(prefix + command[1].lower())
             login_name = command[1]
             #login_bucket.upload_file('./hello.txt', 'hello.txt')
+        
         elif recv[0:26] == "Create post successfully.\n":
             print(recv[0:26], end = '')
             tmp = msg.find('--content')
             the_content = msg[tmp+10:]
             the_content = fix_content(the_content)
             #the_content = '    --\n' + the_content + '\n    --\n'
-            post_id_loc = recv.find('\n')
-            post_id = recv[post_id_loc+1:]
+            
+            recv_split = recv.split('\n')
+            post_id = recv_split[1]
             post_name = login_name + '_post' + post_id + '.txt'
             fp = open(post_name, 'w')
             fp.write(the_content)
@@ -80,6 +88,15 @@ while True:
             #print(post_name, the_content)
             post_acc = post_acc + 1
             login_bucket.upload_file(post_name, post_name)
+            for i in range(2, len(recv_split)):
+                tmp = recv_split.split('--sub_value')
+                zoo_topic = tmp[0]
+                zoo_value = tmp[1]
+                zoo_value = zoo_value + '\n'
+                producer = KafkaProducer(bootstrap_servers=['localhost:9092'])
+                value_encode = str.encode(zoo_value)
+                future = producer.send(zoo_topic , key= b'my_key', value= zoo_value)
+        
         elif command[0] == 'read' and recv != "Post does not exist.\n":
             read_data = recv.split('--------------------\n')
             print(read_data[0], end = '')

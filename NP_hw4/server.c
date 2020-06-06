@@ -43,6 +43,7 @@
 #define ERR25 "Usage: subscribe --board <boardname> --keyword <keyword>\n or\nUsage: subscribe --author <authorname> --keyword <keyword>\n"
 #define ERR26 "Already subscribed.\n"
 #define ERR27 "You haven't subscribed "
+#define ERR28 "Usage: unsubscribe --board <board-name>\n or Usage: unsubscribe --author <author-name>\n"
 
 #define SUC0 "********************************\n** Welcome to the BBS server. **\n********************************\n"
 #define SUC1 "Register successfully.\n"
@@ -58,6 +59,7 @@
 #define SUC11 "Sent successfully.\n"
 #define SUC12 "Mail deleted.\n"
 #define SUC13 "Subscribe successfully.\n"
+#define SUC14 "Unsubscribe successfully.\n"
 
 #define prefix "0616027hw3-16567629137-10923492449-"
 
@@ -676,8 +678,23 @@ void* conn(void *arg){
 
 							char send0[100], tmp_id[10];
 							strcpy(send0, SUC5);
-							sprintf(tmp_id, "%d", posts[acc_post].id);
+							sprintf(tmp_id, "%d\n", posts[acc_post].id);
 							strcat(send0, tmp_id);
+							//send(fd, send0, strlen(send0), 0);
+							//add subscribe--------------------
+							char sub_receiver[100], sub_content[1000];
+							for(int i = 0; i < acc_num; i++){
+								for(int j = 0; j < database[i].sub_boards; j++){
+									if(!strcmp(bname, database[i].sub_board[j].sub_board_name)){	//have sub. the board
+										for(int k = 0; k < database[i].sub_board[j].acc_sub; k++){
+											if(strstr(titlename, database[i].sub_board[j].sub_board_key[k])){ //check title have key or not
+												sprintf(sub_content, "%s--sub_value*[%s] %s - by %s*\n", database[i].name, bname, titlename, login_name);
+												strcat(send0, sub_content);
+											}
+										}
+									}
+								}
+							}
 							send(fd, send0, strlen(send0), 0);
 							//char temp_post[10];
 							//sprintf(temp_post, "%d", posts[acc_post].id);
@@ -1493,9 +1510,10 @@ void* conn(void *arg){
 								for(int k = 0; k < database[i].sub_board[j].acc_sub; k++){
 									char tmp[110];
 									//printf("%dlala\n", k);
-										
-									sprintf(tmp, "%s, ", database[i].sub_board[j].sub_board_key[k]);	
-									strcat(send0, tmp);
+									if(strcmp("None", database[i].sub_board[j].sub_board_key[k])){	
+										sprintf(tmp, "%s, ", database[i].sub_board[j].sub_board_key[k]);	
+										strcat(send0, tmp);
+									}
 								}
 								strcat(send0, "---");
 								strrpc(send0, ", ---", "; ");
@@ -1512,9 +1530,10 @@ void* conn(void *arg){
                                                                 for(int k = 0; k < database[i].sub_author[j].acc_sub; k++){
                                                                         char tmp[110];
                                                                         //printf("%dlala\n", k);
-
-                                                                        sprintf(tmp, "%s, ", database[i].sub_author[j].sub_author_key[k]);
-                                                                        strcat(send0, tmp);
+									if(strcmp("None", database[i].sub_author[j].sub_author_key[k])){
+										sprintf(tmp, "%s, ", database[i].sub_author[j].sub_author_key[k]);
+                                                                        	strcat(send0, tmp);
+									}
                                                                 }
                                                                 strcat(send0, "---");
                                                                 strrpc(send0, ", ---", "; ");
@@ -1528,6 +1547,71 @@ void* conn(void *arg){
 				strrpc(send0, "; \n", "\n");
 				send(fd, send0, strlen(send0), 0);
 			//}
+		}
+		else if(!strncmp(recv_msg, "unsubscribe", 11)){
+			if(login_yn == 0){	//login first
+				send(fd, ERR6, strlen(ERR6), 0);
+			}
+			else if(!strncmp(recv_msg, "unsubscribe --board", 19)){
+				char board_name[100];
+			       	strcpy(board_name, recv_msg + 20);
+				int board_exist = 0;
+				int loc_user = 0, loc_board = 0;
+				for(int i = 0; i < acc_num; i++){
+					if(!strcmp(login_name, database[i].name)){
+						loc_user = i;
+						for(int j = 0; j < database[i].sub_boards; j++){		
+							//printf("|%s| |%s|\n", board_name, database[i].sub_board[j].sub_board_name);
+							if(!strcmp(board_name, database[i].sub_board[j].sub_board_name)){// board exist
+								strcpy(database[i].sub_board[j].sub_board_name, "None");
+								board_exist = 1;
+								break;
+							}
+							
+						}
+					}
+					break;
+				}
+				if(board_exist == 0){	//not find, haven't subscribed
+					char send0[1024];
+					sprintf(send0, "You haven't subscribed %s\n", board_name);
+					send(fd, send0, strlen(send0), 0);
+				}
+				else{	//find
+					send(fd, SUC14, strlen(SUC14), 0); 
+				}
+			}
+			else if(!strncmp(recv_msg, "unsubscribe --author", 20)){
+                        	char author_name[100];
+                                strcpy(author_name, recv_msg + 21);
+                                int author_exist = 0;
+                                int loc_user = 0, loc_author = 0;
+                                for(int i = 0; i < acc_num; i++){
+                                        if(!strcmp(login_name, database[i].name)){
+                                                loc_user = i;
+                                                for(int j = 0; j < database[i].sub_authors; j++){
+                                                        //printf("|%s| |%s|\n", author_name, database[i].sub_author[j].sub_author_name);
+							if(!strcmp(author_name, database[i].sub_author[j].sub_author_name)){// board exist
+                                                                strcpy(database[i].sub_author[j].sub_author_name, "None");
+                                                                author_exist = 1;
+								break;
+                                                        }
+                                                }
+                                        }
+                                        break;
+                                }
+                                if(author_exist == 0){   //not find, haven't subscribed
+                                        char send0[1024];
+                                        sprintf(send0, "You haven't subscribed %s\n", author_name);
+                                        send(fd, send0, strlen(send0), 0);
+                                }
+                                else{   //find
+                                        send(fd, SUC14, strlen(SUC14), 0);
+                                }
+                        }
+			else{
+				send(fd, ERR28, sizeof(ERR28), 0); 
+			}
 		}
 		else{
 			//signal(SIGPIPE,SIG_IGN);
