@@ -99,7 +99,7 @@ while True:
         
             recv_split = recv.split('\n')
             post_id = recv_split[1]
-            post_name = login_name + '_post' + post_id + '.txt'
+            post_name = 'data/' + login_name + '_post' + post_id + '.txt'
             fp = open(post_name, 'w')
             fp.write(the_content)
             fp.close()
