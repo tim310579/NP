@@ -16,3 +16,14 @@ subscribe --board HeHe --keyword aaaaaa
 subscribe --author Timm --keyword aaadsadaaa
 
 subscribe --author Jackk --keyword lalalad
+
+unsubscribe --board HAHA
+
+create-board HAHA
+
+subscribe --board HAHA --keyword hw
+
+subscribe --board HAHA --keyword hw1
+
+create-post HAHA --title hw1 --content is it simple?
+
