@@ -27,3 +27,44 @@ subscribe --board HAHA --keyword hw1
 
 create-post HAHA --title hw1 --content is it simple?
 
+
+
+1: register Paul paul@cs.nctu.edu.tw 12345
+
+2: register Brad brad@cs.nctu.edu.tw 12345
+
+3: register Gary gary@cs.nctu.edu.tw 12345
+
+1: login Paul 12345
+
+2: login Brad 12345
+
+3: login Gary 12345
+
+2: subscribe --board HW4_Board --keyword Project
+
+3: subscribe --author Jason --keyword hw4
+
+1: create-board HW4_Board
+
+2:  subscribe --board HW4_Board --keyword Project
+
+3:subscribe --author Paul --keyword HW
+
+3: subscribe --author Paul --keyword post
+
+2: subscribe --author Bryant --keyword exam
+
+3: unsubscribe --author Brad
+
+1: create-post HW4_Board --title About Project --content HW4…
+
+2: list-board ##HW
+
+1: create-post HW4_Board --title About HW and Exam --content blablabla
+
+2: unsubscribe --author Bryant
+
+3:  list-sub
+
+

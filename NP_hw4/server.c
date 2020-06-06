@@ -695,6 +695,19 @@ void* conn(void *arg){
 									}
 								}
 							}
+							//for sub author
+							for(int i = 0; i < acc_num; i++){
+								for(int j = 0; j < database[i].sub_authors; j++){
+									if(!strcmp(login_name, database[i].sub_author[j].sub_author_name)){	//have sub. the board
+										for(int k = 0; k < database[i].sub_author[j].acc_sub; k++){
+											if(strstr(titlename, database[i].sub_author[j].sub_author_key[k])){ //check title have key or not
+												sprintf(sub_content, "%s--sub_value*[%s] %s - by %s*\n", database[i].name, bname, titlename, login_name);
+												strcat(send0, sub_content);
+											}
+										}
+									}
+								}
+							}
 							send(fd, send0, strlen(send0), 0);
 							//char temp_post[10];
 							//sprintf(temp_post, "%d", posts[acc_post].id);
@@ -1569,8 +1582,9 @@ void* conn(void *arg){
 							}
 							
 						}
+						break;
 					}
-					break;
+					//break;
 				}
 				if(board_exist == 0){	//not find, haven't subscribed
 					char send0[1024];
@@ -1587,7 +1601,8 @@ void* conn(void *arg){
                                 int author_exist = 0;
                                 int loc_user = 0, loc_author = 0;
                                 for(int i = 0; i < acc_num; i++){
-                                        if(!strcmp(login_name, database[i].name)){
+                                        //printf("|%s|, |%s|\n", login_name, database[i].name);
+					if(!strcmp(login_name, database[i].name)){
                                                 loc_user = i;
                                                 for(int j = 0; j < database[i].sub_authors; j++){
                                                         //printf("|%s| |%s|\n", author_name, database[i].sub_author[j].sub_author_name);
@@ -1597,8 +1612,9 @@ void* conn(void *arg){
 								break;
                                                         }
                                                 }
+						break;
                                         }
-                                        break;
+                                        //break;
                                 }
                                 if(author_exist == 0){   //not find, haven't subscribed
                                         char send0[1024];
