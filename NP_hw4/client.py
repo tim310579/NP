@@ -9,14 +9,18 @@ import signal
 from sys import argv
 
 is_over = 0
+is_login = 0
+consumer = KafkaConsumer('tmp_topic', bootstrap_servers= ['localhost:9092'], consumer_timeout_ms=2000)
 
-def job(consumer):
+def job():
     #print('in job')
     while 1:
+        #print('in_job')
         for msg in consumer:
             tmp = msg.value
             temp = str(tmp, 'utf-8')
-            print(temp, end = '')
+            if(is_login == 1):
+                print(temp, end = '')
         if is_over == 1:
             break
 
@@ -52,9 +56,11 @@ login_bucket = s3.Bucket('')
 target_bucket = s3.Bucket('')
 post_acc = 1
 login_name = ''
-consumer = KafkaConsumer('tmp_topic', bootstrap_servers= ['localhost:9092'], consumer_timeout_ms=1000)
-t = threading.Thread(target = job, args = (consumer, ))
-#t.start()
+#consumer = KafkaConsumer('tmp_topic', bootstrap_servers= ['localhost:9092'], consumer_timeout_ms=1000)
+#threads = []
+#acc_thread = 0
+t = threading.Thread(target = job)
+t.start()
 while True:
         
     
@@ -84,12 +90,16 @@ while True:
             login_bucket = s3.Bucket(prefix + command[1].lower())
             login_name = command[1]
             is_over = 0
+            is_login = 1
+            consumer = KafkaConsumer(login_name, bootstrap_servers= ['localhost:9092'], consumer_timeout_ms=2000)
             #t = threading.Thread(target = job, args = (consumer, ))                
-            consumer.subscribe(topics=(login_name))
-            t.start()
+            #consumer.subscribe(topics=(login_name))
+            #print(consumer.subscription())
+            #threads.append(threading.Thread(target = job, args = (consumer, )))
+            #t.start()
             #login_bucket.upload_file('./hello.txt', 'hello.txt')
             #consumer = KafkaConsumer(login_name, bootstrap_servers= ['localhost:9092'], consumer_timeout_ms=1000)
-            consumer.subscribe(topics=(login_name))
+            #consumer.subscribe(topics=(login_name))
         elif recv[0:26] == "Create post successfully.\n":
             print(recv[0:26], end = '')
             tmp = msg.find('--content')
@@ -204,13 +214,15 @@ while True:
         elif command[0] == 'exit' and recv == 'close':
             is_over = 1
             t.join()
+            #acc_thread = acc_thread + 1
             consumer.unsubscribe()
             login_name = ''
             break;
         elif command[0] == 'logout' and recv[0:4] == 'Bye,':
             print(recv, end = '')
-            is_over = 1
-            t.join()
+            is_login = 0
+            #threads[acc_thread].join()
+            #acc_thread = acc_thread + 1
             consumer.unsubscribe()
             login_name = ''
 
